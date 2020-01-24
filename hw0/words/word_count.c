@@ -30,22 +30,49 @@ char *new_string(char *str) {
 
 void init_words(WordCount **wclist) {
   /* Initialize word count.  */
-  *wclist = NULL;
+  WordCount *wc = (WordCount*)malloc(sizeof(WordCount));
+  // Need to be initialized - sentinel
+  wc->word = NULL;
+  wc->count = 0;
+  wc->next = NULL;
+  *wclist = wc;
 }
 
 size_t len_words(WordCount *wchead) {
     size_t len = 0;
+    while (wchead->word == NULL) {
+      wchead = wchead->next;
+      len += 1;
+    }
     return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
-  WordCount *wc = NULL;
-  return wc;
+  // Return the last WordCount if the word can not be found.
+  //printf("Starting finding word");
+  while (wchead->word != NULL && wchead != NULL) { // When it is not the sentinel and at the end.
+    printf("Finding word: %s", wchead->word);
+    if (strcmp(wchead->word, word) == 0) {
+      return wchead;
+    }
+    wchead = wchead->next;
+  }
+  return wchead;
 }
 
 void add_word(WordCount **wclist, char *word) {
   /* If word is present in word_counts list, increment the count, otw insert with count 1. */
+  WordCount *wc = find_word(*wclist, word);
+  if (wc->word != NULL) {
+    wc->count += 1;
+  } else {
+    WordCount *wc = (WordCount*)malloc(sizeof(WordCount));
+    wc->word = new_string(word);
+    wc->count = 1;
+    wc->next = (*wclist)->next;
+    (*wclist)->next = wc;
+  }
 }
 
 void fprint_words(WordCount *wchead, FILE *ofile) {
