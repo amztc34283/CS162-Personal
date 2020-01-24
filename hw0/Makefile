@@ -1,11 +1,16 @@
 CC?=gcc
 CFLAGS?=-g
-BINARIES=map
+BINARIES=map limits
+
+default:
+	make map
+	make limits
 
 map:
 	$(CC) $(CFLAGS) map.c recurse.c -o map
 
-default: map
+limits:
+	$(CC) $(CFLAGS) limits.c -o limits
 
 clean:
 	rm -f $(BINARIES)
