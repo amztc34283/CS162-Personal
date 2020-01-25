@@ -182,6 +182,10 @@ int main (int argc, char *argv[]) {
   }
 
   if (count_mode) {
+    if (infile != NULL) {
+      total_words = num_words(infile);
+      fclose(infile);
+    }
     for (int i = optind; i < argc; i++) {
       infile = fopen(argv[i], "r");
       total_words += num_words(infile);
