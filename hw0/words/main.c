@@ -60,6 +60,9 @@ int num_words(FILE* infile) {
       num_chars = 0;
     }
   } while(1);
+  if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
+    num_words += 1;
+  }
   return num_words;
 }
 
