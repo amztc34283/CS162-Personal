@@ -54,10 +54,10 @@ int num_words(FILE* infile) {
     if (isalpha(c)) {
       num_chars += 1;
     } else {
+      if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
+        num_words += 1;
+      }
       num_chars = 0;
-    }
-    if (num_chars == 2) {
-      num_words += 1;
     }
   } while(1);
   return num_words;
