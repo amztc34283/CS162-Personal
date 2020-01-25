@@ -175,18 +175,21 @@ int main (int argc, char *argv[]) {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
-    infile = fopen(argv[optind], "r");
+    // infile = fopen(argv[optind], "r");
   }
 
   if (count_mode) {
-    total_words = num_words(infile);
+    for (int i = optind; i < argc; i++) {
+      FILE* infile = fopen(argv[i], "r");
+      total_words += num_words(infile);
+      fclose(infile);
+    }
     printf("The total number of words is: %i\n", total_words);
-    fclose(infile);
   } else {
     count_words(&word_counts, infile);
     //wordcount_sort(&word_counts, wordcount_less);
     printf("The frequencies of each word are: \n");
-    fprint_words(word_counts, stdout);
+    fprint_words(word_counts->next, stdout);
 }
   return 0;
 }
