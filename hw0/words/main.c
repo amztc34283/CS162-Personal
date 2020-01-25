@@ -87,7 +87,7 @@ void count_words(WordCount **wclist, FILE *infile) {
         new_word_ptr[num_chars] = '\0';
         add_word(wclist, strcpy((char *)malloc(num_chars+1), new_word_ptr));
         // %s prints all characters until null terminator.
-        printf("%s", new_word_ptr);
+        // printf("%s", new_word_ptr);
       }
       num_chars = 0;
     }

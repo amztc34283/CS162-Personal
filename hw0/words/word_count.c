@@ -51,9 +51,9 @@ WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
   // Return the last WordCount if the word can not be found.
   //printf("Starting finding word");
-  while (wchead != NULL && wchead->word != NULL) { // When it is not the sentinel and at the end.
-    printf("Finding word: %s", wchead->word);
-    if (strcmp(wchead->word, word) == 0) {
+  while (wchead != NULL) { // When it is not the sentinel and at the end.
+    // printf("Finding word: %s", wchead->word);
+    if (wchead->word != NULL && strcmp(wchead->word, word) == 0) {
       return wchead;
     }
     wchead = wchead->next;
@@ -64,7 +64,7 @@ WordCount *find_word(WordCount *wchead, char *word) {
 void add_word(WordCount **wclist, char *word) {
   /* If word is present in word_counts list, increment the count, otw insert with count 1. */
   WordCount *wc = find_word(*wclist, word);
-  if (wc->word != NULL) {
+  if (wc != NULL && wc->word != NULL) {
     wc->count += 1;
   } else {
     WordCount *wc = (WordCount*)malloc(sizeof(WordCount));
