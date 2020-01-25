@@ -54,13 +54,13 @@ int num_words(FILE* infile) {
     if (isalpha(c)) {
       num_chars += 1;
     } else {
-      if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
+      if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
         num_words += 1;
       }
       num_chars = 0;
     }
   } while(1);
-  if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
+  if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
     num_words += 1;
   }
   return num_words;
@@ -183,7 +183,7 @@ int main (int argc, char *argv[]) {
 
   if (count_mode) {
     for (int i = optind; i < argc; i++) {
-      FILE* infile = fopen(argv[i], "r");
+      infile = fopen(argv[i], "r");
       total_words += num_words(infile);
       fclose(infile);
     }
