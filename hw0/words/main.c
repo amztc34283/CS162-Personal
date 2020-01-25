@@ -48,9 +48,9 @@ int num_words(FILE* infile) {
   int num_words = 0;
   int num_chars = 0;
   do {
+    int c = fgetc(infile);
     if (feof(infile))
       break;
-    int c = fgetc(infile);
     if (isalpha(c)) {
       num_chars += 1;
     } else {
@@ -74,7 +74,6 @@ int num_words(FILE* infile) {
  */
 void count_words(WordCount **wclist, FILE *infile) {
   int num_chars = 0;
-  //WordCount *wc = NULL;
   char fc;
   char *new_word_ptr = NULL;
   do {
@@ -174,26 +173,38 @@ int main (int argc, char *argv[]) {
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
+    // char input[MAX_WORD_LEN];
+    // gets(input);
+    // printf("Reading from stdin: %s", input);
   } else {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
     // infile = fopen(argv[optind], "r");
+
+    //NEED MULTIPLE FILE HERE 
   }
 
   if (count_mode) {
     if (infile != NULL) {
+      //DEBUG
+      //printf("count mode with stdin.");
       total_words = num_words(infile);
       fclose(infile);
-    }
-    for (int i = optind; i < argc; i++) {
-      infile = fopen(argv[i], "r");
-      total_words += num_words(infile);
-      fclose(infile);
+    } else {
+      for (int i = optind; i < argc; i++) {
+        infile = fopen(argv[i], "r");
+        total_words += num_words(infile);
+        fclose(infile);
+      }
     }
     printf("The total number of words is: %i\n", total_words);
   } else {
-    count_words(&word_counts, infile);
+    for (int i = optind; i < argc; i++) {
+      infile = fopen(argv[i], "r");
+      count_words(&word_counts, infile);
+      fclose(infile);
+    }
     //wordcount_sort(&word_counts, wordcount_less);
     printf("The frequencies of each word are: \n");
     fprint_words(word_counts->next, stdout);

@@ -63,7 +63,7 @@ WordCount *find_word(WordCount *wchead, char *word) {
 
 void add_word(WordCount **wclist, char *word) {
   /* If word is present in word_counts list, increment the count, otw insert with count 1. */
-  WordCount *wc = find_word((*wclist)->next, word);
+  WordCount *wc = find_word(*wclist, word);
   if (wc->word != NULL) {
     wc->count += 1;
   } else {
