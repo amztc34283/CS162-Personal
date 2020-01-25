@@ -48,10 +48,10 @@ int num_words(FILE* infile) {
   int num_words = 0;
   int num_chars = 0;
   do {
-    int c = fgetc(infile);
-    if (feof(infile)) {
+    if (feof(infile))
       break;
-    } else if (isalpha(c)) {
+    int c = fgetc(infile);
+    if (isalpha(c)) {
       num_chars += 1;
     } else {
       num_chars = 0;
