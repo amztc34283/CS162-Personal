@@ -217,7 +217,7 @@ int main (int argc, char *argv[]) {
       fclose(infile);
     }
     wordcount_sort(&word_counts, wordcount_less);
-    printf("The frequencies of each word are: \n");
+    // printf("The frequencies of each word are: \n");
     fprint_words(word_counts, stdout);
 }
   return 0;
