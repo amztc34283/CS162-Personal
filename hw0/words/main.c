@@ -50,7 +50,7 @@ int num_words(FILE* infile) {
   do {
     int c = fgetc(infile);
     if (feof(infile)) {
-      if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
+      if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
         num_words += 1;
       }
       break;
@@ -58,7 +58,7 @@ int num_words(FILE* infile) {
     if (isalpha(c)) {
       num_chars += 1;
     } else {
-      if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
+      if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
         num_words += 1;
       }
       num_chars = 0;
