@@ -30,17 +30,12 @@ char *new_string(char *str) {
 
 void init_words(WordCount **wclist) {
   /* Initialize word count.  */
-  WordCount *wc = (WordCount*)malloc(sizeof(WordCount));
-  // Need to be initialized - sentinel
-  wc->word = NULL;
-  wc->count = 0;
-  wc->next = NULL;
-  *wclist = wc;
+  *wclist = NULL;
 }
 
 size_t len_words(WordCount *wchead) {
     size_t len = 0;
-    while (wchead->word == NULL) {
+    while (wchead != NULL) {
       wchead = wchead->next;
       len += 1;
     }
@@ -64,14 +59,14 @@ WordCount *find_word(WordCount *wchead, char *word) {
 void add_word(WordCount **wclist, char *word) {
   /* If word is present in word_counts list, increment the count, otw insert with count 1. */
   WordCount *wc = find_word(*wclist, word);
-  if (wc != NULL && wc->word != NULL) {
+  if (wc != NULL) {
     wc->count += 1;
   } else {
     WordCount *wc = (WordCount*)malloc(sizeof(WordCount));
     wc->word = new_string(word);
     wc->count = 1;
-    wc->next = (*wclist)->next;
-    (*wclist)->next = wc;
+    wc->next = (*wclist);
+    *wclist = wc;
   }
 }
 
