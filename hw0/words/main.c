@@ -49,8 +49,12 @@ int num_words(FILE* infile) {
   int num_chars = 0;
   do {
     int c = fgetc(infile);
-    if (feof(infile))
+    if (feof(infile)) {
+      if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
+        num_words += 1;
+      }
       break;
+    }
     if (isalpha(c)) {
       num_chars += 1;
     } else {
@@ -60,9 +64,6 @@ int num_words(FILE* infile) {
       num_chars = 0;
     }
   } while(1);
-  if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
-    num_words += 1;
-  }
   return num_words;
 }
 
@@ -185,15 +186,10 @@ int main (int argc, char *argv[]) {
   if ((argc - optind) < 1) {
     // No input file specified, instead, read from STDIN instead.
     infile = stdin;
-    // char input[MAX_WORD_LEN];
-    // gets(input);
-    // printf("Reading from stdin: %s", input);
   } else {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
-    // infile = fopen(argv[optind], "r");
-
     //NEED MULTIPLE FILE HERE 
   }
 
