@@ -83,7 +83,8 @@ void count_words(WordCount **wclist, FILE *infile) {
         new_word_ptr[num_chars] = '\0';
       }
       break;
-    } else if (isalpha(c)) {
+    }
+    if (isalpha(c)) {
       num_chars += 1;
     } else {
       if (new_word_ptr != NULL && num_chars >= 2) {
