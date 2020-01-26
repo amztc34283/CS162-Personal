@@ -211,13 +211,18 @@ int main (int argc, char *argv[]) {
     }
     printf("The total number of words is: %i\n", total_words);
   } else {
-    for (int i = optind; i < argc; i++) {
-      infile = fopen(argv[i], "r");
+    if (infile != NULL) {
       count_words(&word_counts, infile);
       fclose(infile);
+    } else {
+      for (int i = optind; i < argc; i++) {
+        infile = fopen(argv[i], "r");
+        count_words(&word_counts, infile);
+        fclose(infile);
+      }
     }
     wordcount_sort(&word_counts, wordcount_less);
-    // printf("The frequencies of each word are: \n");
+    printf("The frequencies of each word are: \n");
     fprint_words(word_counts, stdout);
 }
   return 0;
