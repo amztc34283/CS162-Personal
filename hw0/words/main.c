@@ -80,8 +80,9 @@ void count_words(WordCount **wclist, FILE *infile) {
   do {
     int c = fgetc(infile);
     if (feof(infile)) {
-      if (num_chars >= 2 && num_chars < MAX_WORD_LEN) {
+      if (num_chars >= 2 && num_chars <= MAX_WORD_LEN) {
         new_word_ptr[num_chars] = '\0';
+        add_word(wclist, strcpy((char *)malloc(num_chars+1), new_word_ptr));
       }
       break;
     }
