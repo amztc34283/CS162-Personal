@@ -1,63 +1,86 @@
 GDB Practice:
 
-a.
+a. gdb map
 
-b.
+b. break main or break _start
 
-c.
+c. run
 
 d.
 
-    *
+    * 0x7fffffffe4a8
 
 e.
 
-    *
+    * -6426
 
-f.
+f. okay
 
-g.
+g. 
 
-    *
+    * 0x5555555546cd
 
-h.
+h. okay
 
-i.
+i. okay
 
-j.
+j. layout asm
 
-k.
+k. break *0x5555555546ef
 
 l.
 
-    *
+    * rax            0x0      0
+      rbx            0x0      0
+      rcx            0x5555557562d0   93824994337488
+      rdx            0x5555557562d0   93824994337488
+      rsi            0x3      3
+      rdi            0x555555554794   93824992233364
+      rbp            0x7fffffffe380   0x7fffffffe380
+      rsp            0x7fffffffe360   0x7fffffffe360
+      r8             0x2      2
+      r9             0x0      0
+      r10            0x555555756010   93824994336784
+      r11            0x0      0
+      r12            0x555555554580   93824992232832
+      r13            0x7fffffffe4a0   140737488348320
+      r14            0x0      0
+      r15            0x0      0
+      rip            0x5555555546ef   0x5555555546ef <recur+34>
+      eflags         0x206    [ PF IF ]
+      cs             0x33     51
+      ss             0x2b     43
+      ds             0x0      0
+      es             0x0      0
+      fs             0x0      0
+      gs             0x0      0
 
-m.
+m. okay
 
-n.
+n. okay
 
-o.
+o. backtrace
 
-p.
+p. break recurse.c:3 if i == 0
 
-q.
+q. okay
 
-r.
+r. okay
 
-s.
+s. 1
 
-t.
+t. okay
 
-u.
+u. okay
 
 v.
 
-    *
+    * mov    $0x0,%eax
 
-w.
+w. tui disable
 
-x.
+x. continue
 
-y.
+y. continue
 
-z.
+z. q

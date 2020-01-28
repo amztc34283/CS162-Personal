@@ -1,16 +1,20 @@
-1.
+1.  subl    $1, %eax
+    subl    $12, %es
+    pushl   %eax
+    call    recur
 
-2.
+2. The .text section contains the assembly code for the instructions while the .data section contains the initialized variables. In the recurse.c file, there is only read-only data section while the map.c file has the initialized variable stuff declared in .data section.
 
-3.
+3. objdump -t map.obj
 
-4
+4. *UND is referring to the section which is referenced in the ELF file but is not defined there. g is referring to a global symbol. O is referring to an object symbol (probably some variables which can be accessed by other files). F is referring to a function symbol.
 
-5.
+5. I think we can find the symbol of malloc in stdlib.c. 
 
-6.
+6. We can also find the symbol of recur in map.obj.
+   00000000         *UND*  00000000 recur
 
-7.
+7. There are many irrelevant lines added to the new symbol table, probably coming from the dynamically-linked library.
 
 8.
 
