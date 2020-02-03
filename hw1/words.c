@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Output final result. */
-  //wordcount_sort(&word_counts, less_count);
+  wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
   return 0;
 }
