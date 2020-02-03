@@ -95,9 +95,8 @@ static bool less_list(const struct list_elem *ewc1,
   /* TODO */
   word_count_t *wc1 = list_entry(ewc1, word_count_t, elem);
   word_count_t *wc2 = list_entry(ewc2, word_count_t, elem);
-  void *voidptr = (void*)aux;
-  bool (*fun_ptr)(void*)(void*) = aux;
-  return (*fun_ptr(wc1, wc2));
+  bool (*fun_ptr)(void*, void*) = aux;
+  return (*fun_ptr)(wc1, wc2);
 }
 
 void wordcount_sort(word_count_list_t *wclist,
