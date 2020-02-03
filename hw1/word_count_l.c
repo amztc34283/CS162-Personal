@@ -89,6 +89,7 @@ void fprint_words(word_count_list_t *wclist, FILE *outfile) {
   }
 }
 
+//Testing baby
 static bool less_list(const struct list_elem *ewc1,
                       const struct list_elem *ewc2, void *aux) {
   /* TODO */
