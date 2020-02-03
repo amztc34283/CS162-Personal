@@ -23,6 +23,10 @@ void remove_nodes (LinkNode **node_addr, char *str) {
         if (!strcmp((*node_addr)->value, str)) {
             LinkNode *to_free = *node_addr;
             *node_addr = to_free->next;
+<<<<<<< HEAD
+=======
+            free (to_free->value);
+>>>>>>> 1e24ac9658b256941ac562ef948df103bf77497a
             free (to_free);
         } else {
             node_addr = &(*node_addr)->next;
