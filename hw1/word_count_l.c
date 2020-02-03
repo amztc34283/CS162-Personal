@@ -69,7 +69,7 @@ word_count_t *add_word_with_count(word_count_list_t *wclist, char *word,
     wc->count = 1;
     struct list_elem elem;
     wc->elem = elem;
-    list_insert(list_begin(wclist), &(wc->elem));
+    list_push_back(wclist, &(wc->elem));
   } else {
     perror("malloc");
   }
