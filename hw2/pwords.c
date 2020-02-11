@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     int nthreads = argc - 1;
     int rc;
     pthread_t threads[nthreads];
-    int t;
+    long t;
     for (t = 1; t <= nthreads; t++) {
       struct arg_struct args;
       args.lst = &word_counts;
