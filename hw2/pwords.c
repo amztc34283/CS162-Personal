@@ -42,7 +42,6 @@ void process_file(void *arguments) {
   FILE *infile = fopen(args->filename, "r");
   if (infile == NULL) {
     perror("fopen");
-    return 1;
   }
   count_words(args->lst, infile);
   fclose(infile);
@@ -70,14 +69,14 @@ int main(int argc, char *argv[]) {
       struct arg_struct args;
       args.lst = &word_counts;
       args.filename = argv[t];
-      rc = pthread_create(&threads[t], NULL, process_file, (struct arg_struct *) &args);
+      rc = pthread_create(&threads[t-1], NULL, process_file, (struct arg_struct *) &args);
       if (rc) {
         printf("ERROR; return code from pthread_create() is %d\n", rc);
         exit(-1);
       }
     }
   for (t = 1; t <= nthreads; t++)
-    pthread_join(threads[t], NULL);
+    pthread_join(threads[t-1], NULL);
   }
 
   /* Output final result of all threads' work. */
