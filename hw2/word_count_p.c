@@ -59,7 +59,7 @@ word_count_t *find_word(word_count_list_t *wclist, char *word) {
 
 word_count_t *add_word(word_count_list_t *wclist, char *word) {
   /* TODO */
-  // pthread_mutex_lock(&(wclist->lock));
+  pthread_mutex_lock(&(wclist->lock));
   word_count_t *wc = find_word(wclist, word);
   if (wc != NULL) {
     wc->count += 1;
@@ -70,7 +70,7 @@ word_count_t *add_word(word_count_list_t *wclist, char *word) {
   } else {
     perror("malloc");
   }
-  // pthread_mutex_unlock(&(wclist->lock));
+  pthread_mutex_unlock(&(wclist->lock));
   return wc; 
 }
 
