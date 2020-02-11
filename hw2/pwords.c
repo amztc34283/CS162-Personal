@@ -32,18 +32,22 @@
 #include "word_count.h"
 #include "word_helpers.h"
 
+/*
 struct arg_struct {
   word_count_list_t *lst;
   char *filename;
 };
+*/
 
-void process_file(void *arguments) {
-  struct arg_struct *args = (struct arg_struct *) arguments;
-  FILE *infile = fopen(args->filename, "r");
+word_count_list_t *shared_lst;
+
+void process_file(void *filename) {
+  //struct arg_struct *args = (struct arg_struct *) arguments;
+  FILE *infile = fopen((char *) filename, "r");
   if (infile == NULL) {
     perror("fopen");
   }
-  count_words(args->lst, infile);
+  count_words(shared_lst, infile);
   fclose(infile);
   pthread_exit(NULL);
 }
@@ -65,11 +69,9 @@ int main(int argc, char *argv[]) {
     int rc;
     pthread_t threads[nthreads];
     long t;
+    shared_lst = &word_counts;
     for (t = 1; t <= nthreads; t++) {
-      struct arg_struct args;
-      args.lst = &word_counts;
-      args.filename = argv[t];
-      rc = pthread_create(&threads[t-1], NULL, process_file, (struct arg_struct *) &args);
+      rc = pthread_create(&threads[t-1], NULL, process_file, (void *) argv[t]);
       if (rc) {
         printf("ERROR; return code from pthread_create() is %d\n", rc);
         exit(-1);
