@@ -90,5 +90,5 @@ int main(int argc, char *argv[]) {
   /* Output final result of all threads' work. */
   wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
-  pthread_exit(0);
+  exit(0);
 }
