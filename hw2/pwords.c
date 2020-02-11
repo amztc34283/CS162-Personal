@@ -75,12 +75,13 @@ int main(int argc, char *argv[]) {
         exit(-1);
       }
     }
-  for (t = 1; t <= nthreads; t++)
-    pthread_join(threads[t-1], NULL);
+    for (t = 1; t <= nthreads; t++)
+      pthread_join(threads[t-1], NULL);
   }
 
   /* Output final result of all threads' work. */
   wordcount_sort(&word_counts, less_count);
   fprint_words(&word_counts, stdout);
-  pthread_exit(0);
+  // pthread_exit(0);
+  exit(0);
 }
