@@ -41,7 +41,8 @@ struct arg_struct {
 
 word_count_list_t *shared_lst;
 
-void process_file(void *filename) {
+void *process_file(void *filename) {
+  // printf("File %s is processing", (char*) filename);
   //struct arg_struct *args = (struct arg_struct *) arguments;
   FILE *infile = fopen((char *) filename, "r");
   if (infile == NULL) {
@@ -56,6 +57,7 @@ void process_file(void *filename) {
  * main - handle command line, spawning one thread per file.
  */
 int main(int argc, char *argv[]) {
+  // printf("Are you here");
   /* Create the empty data structure. */
   word_count_list_t word_counts;
   init_words(&word_counts);
@@ -69,6 +71,10 @@ int main(int argc, char *argv[]) {
     int rc;
     pthread_t threads[nthreads];
     long t;
+    if (pthread_mutex_init(&(word_counts.lock), NULL) != 0) { 
+        printf("\n Mutex init has failed\n"); 
+        return 1; 
+    }
     shared_lst = &word_counts;
     for (t = 1; t <= nthreads; t++) {
       rc = pthread_create(&threads[t-1], NULL, process_file, (void *) argv[t]);
