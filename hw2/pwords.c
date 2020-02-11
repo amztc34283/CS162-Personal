@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 
   if (argc <= 1) {
     /* Process stdin in a single thread. */
+    // Whatsup
     count_words(&word_counts, stdin);
   } else {
     /* TODO */
