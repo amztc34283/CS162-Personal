@@ -62,6 +62,11 @@ int main(int argc, char *argv[]) {
   word_count_list_t word_counts;
   init_words(&word_counts);
 
+  if (pthread_mutex_init(&(word_counts.lock), NULL) != 0) {
+    printf("\n Mutex init has failed\n"); 
+    return -1; 
+  }
+
   if (argc <= 1) {
     /* Process stdin in a single thread. */
     // Whatsup
@@ -72,10 +77,6 @@ int main(int argc, char *argv[]) {
     int rc;
     pthread_t threads[nthreads];
     long t;
-    if (pthread_mutex_init(&(word_counts.lock), NULL) != 0) { 
-        printf("\n Mutex init has failed\n"); 
-        return 1; 
-    }
     shared_lst = &word_counts;
     for (t = 1; t <= nthreads; t++) {
       rc = pthread_create(&threads[t-1], NULL, process_file, (void *) argv[t]);
