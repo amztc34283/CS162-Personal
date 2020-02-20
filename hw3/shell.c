@@ -155,8 +155,7 @@ int main(unused int argc, unused char *argv[]) {
         // Add path resolution here
         char *path = getenv("PATH");
         char *token = strtok(path, ":"); 
-        char *program = (char *) malloc(strlen(*command)+1);
-        strcpy(program, *command);
+        char *program = *command;
         // For slash and null terminator
         char *slash_program = (char *) malloc(strlen(program)+2);
         slash_program[0] = '/';
@@ -167,7 +166,7 @@ int main(unused int argc, unused char *argv[]) {
           path_resoluted_program[0] = '\0';
           strcat(path_resoluted_program, token);
           strcat(path_resoluted_program, slash_program);
-          *command = (char *) malloc(strlen(token)+strlen(program)+2);
+          *command = (char *) malloc(strlen(path_resoluted_program)+1);
           *command[0] = '\0';
           strcat(*command, path_resoluted_program);
           execv(path_resoluted_program, command);
