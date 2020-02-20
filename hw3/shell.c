@@ -149,13 +149,16 @@ int main(unused int argc, unused char *argv[]) {
           *(command+i) = tokens_get_token(tokens, i);
         }
         *(command+number_of_tokens) = NULL;
+        // Assuming this is full path if this succeeds.
+        execv(*command, command);
 
         // Add path resolution here
         char *path = getenv("PATH");
         char *token = strtok(path, ":"); 
-        char *program = *command;
+        char *program = (char *) malloc(strlen(*command)+1);
+        strcpy(program, *command);
         // For slash and null terminator
-        char *slash_program = (char *) malloc(strlen(*command)+2);
+        char *slash_program = (char *) malloc(strlen(program)+2);
         slash_program[0] = '/';
         slash_program[1] = '\0';
         strcat(slash_program, program);
@@ -164,17 +167,12 @@ int main(unused int argc, unused char *argv[]) {
           path_resoluted_program[0] = '\0';
           strcat(path_resoluted_program, token);
           strcat(path_resoluted_program, slash_program);
-          *command = (char *) malloc(strlen(token)+strlen(*command)+2);
+          *command = (char *) malloc(strlen(token)+strlen(program)+2);
+          *command[0] = '\0';
           strcat(*command, path_resoluted_program);
           execv(path_resoluted_program, command);
           token = strtok(NULL, ":");
         }
-       
-        // Rewrite old value 
-        *command = program;
-        // Assuming this is full path if this succeeds.
-        execv(*command, command);
-        fprintf(stdout, "This shell doesn't know how to run programs.\n");
         exit(0);
       } else {
         waitpid(pid, &status, 0);
