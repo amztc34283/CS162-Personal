@@ -149,6 +149,30 @@ int main(unused int argc, unused char *argv[]) {
           *(command+i) = tokens_get_token(tokens, i);
         }
         *(command+number_of_tokens) = NULL;
+
+        // Add path resolution here
+        char *path = getenv("PATH");
+        printf("%s", path);
+        char *token = strtok(path, ":"); 
+        printf("%s", token);
+        char *program = *command;
+        // For slash and null terminator
+        char *slash_program = (char *) malloc(strlen(*command)+2);
+        slash_program[0] = '/';
+        slash_program[1] = '\0';
+        strcat(slash_program, program);
+        while(token != NULL) {
+          char *path_resoluted_program = (char *) malloc(strlen(token)+strlen(slash_program)+1);
+          path_resoluted_program[0] = '\0';
+          strcat(path_resoluted_program, token);
+          strcat(path_resoluted_program, slash_program);
+          *command = (char *) malloc(strlen(token)+strlen(*command)+2);
+          strcat(*command, path_resoluted_program);
+          execv(path_resoluted_program, command);
+          token = strtok(NULL, ":");
+        }
+        
+        // Assuming this is full path if this succeeds.
         execv(*command, command);
         fprintf(stdout, "This shell doesn't know how to run programs.\n");
         exit(0);
