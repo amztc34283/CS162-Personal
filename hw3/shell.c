@@ -152,9 +152,7 @@ int main(unused int argc, unused char *argv[]) {
 
         // Add path resolution here
         char *path = getenv("PATH");
-        printf("%s", path);
         char *token = strtok(path, ":"); 
-        printf("%s", token);
         char *program = *command;
         // For slash and null terminator
         char *slash_program = (char *) malloc(strlen(*command)+2);
@@ -171,7 +169,9 @@ int main(unused int argc, unused char *argv[]) {
           execv(path_resoluted_program, command);
           token = strtok(NULL, ":");
         }
-        
+       
+        // Rewrite old value 
+        *command = program;
         // Assuming this is full path if this succeeds.
         execv(*command, command);
         fprintf(stdout, "This shell doesn't know how to run programs.\n");
