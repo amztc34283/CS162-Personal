@@ -138,17 +138,33 @@ int main(unused int argc, unused char *argv[]) {
       // Time to fork a new process and run a new program provided in the command
       pid_t pid;
       int status;
+
+      // Add redirection
+      int pipefd[2];
+      pipe(pipefd);
+      bool inward = false;
+      bool outward = false;
+
+      // Tokenize outside such that the parent process understands the redirection
+      int number_of_tokens = tokens_get_length(tokens);
+      char **command = (char **) malloc(number_of_tokens+1);
+      for (int i = 0; i < number_of_tokens; i++) {
+        *(command+i) = tokens_get_token(tokens, i);
+        if (strcmp(*(command+i), "<") == 0) {
+          inward = true;
+          break;
+        } else if (strcmp(*(command+i), ">") == 0) {
+          outward = true;
+          break;
+        }
+      }
+      *(command+number_of_tokens) = NULL;
+
       pid = fork();
       if (pid == -1) {
         printf("Fork fails\n");
         exit(-1);
-      } else if (pid == 0) {
-        int number_of_tokens = tokens_get_length(tokens);
-        char **command = (char **) malloc(number_of_tokens+1);
-        for (int i = 0; i < number_of_tokens; i++) {
-          *(command+i) = tokens_get_token(tokens, i);
-        }
-        *(command+number_of_tokens) = NULL;
+      } else if (pid == 0) { 
         // Assuming this is full path if this succeeds.
         execv(*command, command);
 
@@ -172,6 +188,7 @@ int main(unused int argc, unused char *argv[]) {
           execv(path_resoluted_program, command);
           token = strtok(NULL, ":");
         }
+
         exit(0);
       } else {
         waitpid(pid, &status, 0);
