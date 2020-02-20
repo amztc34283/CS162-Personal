@@ -172,8 +172,14 @@ int main(unused int argc, unused char *argv[]) {
       } else if (pid == 0) { //child
         // write side of the pipe is the same as stdout
         // such that child process writes to stdout is the same as writing to the pipe
-        dup2(pipefd[1], 1);
-        close(pipefd[1]);
+        if (outward) {
+          dup2(pipefd[1], 1);
+          close(pipefd[1]);
+        } else if (inward) {
+          close(pipefd[1]);
+          dup2(pipefd[0], 0);
+          close(pipefd[0]);
+        }
 
         // Assuming this is full path if this succeeds.
         execv(*command, command);
@@ -201,19 +207,28 @@ int main(unused int argc, unused char *argv[]) {
 
         exit(0);
       } else { // parent
+        char buffer[1024];
+        char *file_name = tokens_get_token(tokens, ++i);
+        int fd;
         if (outward) {
+          // create file descriptor
+          fd = open(file_name, O_CREAT|O_TRUNC|O_WRONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
           // Has to close parent's own write port so that read would not be blocked
           close(pipefd[1]);
-          char buffer[1024];
-          char *file_name = tokens_get_token(tokens, ++i);
-          // create file descriptor
-          int fd = open(file_name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
           while (read(pipefd[0], buffer, sizeof(buffer)) != 0) {
             write(fd, buffer, strlen(buffer)+1);
           }
-          close(fd);
           close(pipefd[0]);
+        } else if (inward) {
+          // create file descriptor
+          fd = open(file_name, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+          close(pipefd[0]);
+          while(read(fd, buffer, sizeof(buffer)) != 0) {
+            write(pipefd[1], buffer, strlen(buffer)+1);
+          }
+          close(pipefd[1]);
         }
+        close(fd);
         waitpid(pid, &status, 0);
       }
     }
