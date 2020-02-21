@@ -143,6 +143,9 @@ int main(unused int argc, unused char *argv[]) {
       bool inward = false;
       bool outward = false;
 
+      // Add pipe
+      int number_of_pipe = 0;
+
       // Tokenize outside such that the parent process understands the redirection
       int number_of_tokens = tokens_get_length(tokens);
       // To Be Determined: Do we need to make it smaller if redirection happens?
@@ -150,17 +153,20 @@ int main(unused int argc, unused char *argv[]) {
       int i;
       for (i = 0; i < number_of_tokens; i++) {
         *(command+i) = tokens_get_token(tokens, i);
-        if (strcmp(*(command+i), "<") == 0) {
+        if (strcmp(*(command+i), "<") == 0 && number_of_pipe == 0) {
           inward = true;
           break;
-        } else if (strcmp(*(command+i), ">") == 0) {
+        } else if (strcmp(*(command+i), ">") == 0 && number_of_pipe == 0) {
           outward = true;
           break;
+        } else if (strcmp(*(command+i), "|") == 0) {
+          // Assumption is that there will not be mixed use of pipe and redirection
+          number_of_pipe += 1;
         }
       }
       *(command+i) = NULL;
 
-      // Only pipe when there is redirection
+      // Only create pipe when there is redirection
       int pipefd[2];
       if (inward || outward)
         pipe(pipefd);
@@ -172,6 +178,7 @@ int main(unused int argc, unused char *argv[]) {
       } else if (pid == 0) { //child
         // write side of the pipe is the same as stdout
         // such that child process writes to stdout is the same as writing to the pipe
+        // Redirection Fun
         if (outward) {
           dup2(pipefd[1], 1);
           close(pipefd[1]);
@@ -207,6 +214,7 @@ int main(unused int argc, unused char *argv[]) {
 
         exit(0);
       } else { // parent
+        // Redirection Fun
         char buffer[1024];
         char *file_name = tokens_get_token(tokens, ++i);
         int fd;
