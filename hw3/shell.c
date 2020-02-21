@@ -224,7 +224,7 @@ int main(unused int argc, unused char *argv[]) {
           // Has to close parent's own write port so that read would not be blocked
           close(pipefd[1]);
           while (read(pipefd[0], buffer, sizeof(buffer)) != 0) {
-            write(fd, buffer, strlen(buffer)+1);
+            write(fd, buffer, strlen(buffer));
           }
           close(pipefd[0]);
         } else if (inward) {
@@ -232,7 +232,7 @@ int main(unused int argc, unused char *argv[]) {
           fd = open(file_name, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
           close(pipefd[0]);
           while(read(fd, buffer, sizeof(buffer)) != 0) {
-            write(pipefd[1], buffer, strlen(buffer)+1);
+            write(pipefd[1], buffer, strlen(buffer));
           }
           close(pipefd[1]);
         }
