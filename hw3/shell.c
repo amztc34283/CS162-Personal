@@ -191,7 +191,7 @@ int main(unused int argc, unused char *argv[]) {
             close(pipefd[1]);
             dup2(pipefd[0], 0);
             close(pipefd[0]);
-          } else if (number_of_pipe >= 0) {
+          } else if (number_of_pipe > 0) {
             // Even the first child process would not use the read pipe, it should be fine?
             // Could be buggy here.
             dup2(pipefd[0], 0);
@@ -249,17 +249,18 @@ int main(unused int argc, unused char *argv[]) {
             close(pipefd[1]);
           } else if (number_of_pipe > 0) {
             // assuming when there is something to read, the child process has ended.
-            while(read(pipefd[0], buffer, sizeof(buffer)) != 0) {
+            /*while(read(pipefd[0], buffer, sizeof(buffer)) != 0) {
               // therefore I write the output from child to the pipe for the next child to consume
               //TODO
               write(pipefd[1], buffer, strlen(buffer));
-            }
+            }*/
             command = command+pipes_location[0]+1;
           }
           close(fd);
           waitpid(pid, &status, 0);
           if (inward || outward)
             break;
+          // TODO: increment command ptr
         }
         // run two times for one pipe, etc.
         if (number_of_pipe > -1)
