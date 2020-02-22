@@ -151,7 +151,7 @@ int main(unused int argc, unused char *argv[]) {
       // Tokenize outside such that the parent process understands the redirection
       int number_of_tokens = tokens_get_length(tokens);
       // To Be Determined: Do we need to make it smaller if redirection happens?
-      char **command = (char **) malloc(number_of_tokens+1);
+      char **command = (char **) malloc(sizeof(char*)*number_of_tokens+1);
       // pointer to the pipe location
       int *pipes_location = (int *) malloc(sizeof(int)*number_of_tokens);
       int i;
@@ -172,17 +172,15 @@ int main(unused int argc, unused char *argv[]) {
       }
       *(command+i) = NULL;
 
-      //printf("debug %s", *(command+2));
-      //fflush(stdout);
-      int pipe_size = number_of_pipe;
+      int j = 0;
 
       do {
         // Only create pipe when there is redirection
         int pipefd[2];
-        int pipefds[number_of_pipe+1][2];
-
+        int tempipe[2];
         if (inward || outward || number_of_pipe > 0) {
           pipe(pipefd);
+          pipe(tempipe);
         }
         pid = fork();
         if (pid == -1) {
@@ -255,9 +253,10 @@ int main(unused int argc, unused char *argv[]) {
             close(pipefd[1]);
           } else if (number_of_pipe > 0) {
             dup2(pipefd[0], 0);
-            close(pipefd[1]); // if this is deleted, it will stuck
+            close(pipefd[1]); // make sure all write is clean; otherwise, it will stuck
             // increment command ptr
-            command = command+pipes_location[0]+1;
+            command = command+pipes_location[j]+1; // if the index is 1 with wc shell.c | cat; the result will have stdin
+            j += 1;
           }
           close(fd);
           waitpid(-1, &status, 0);
@@ -268,6 +267,8 @@ int main(unused int argc, unused char *argv[]) {
         if (number_of_pipe > -1)
           number_of_pipe -= 1;
       } while(number_of_pipe != -1);
+      //free(command);
+      free(pipes_location);
     }
 
     if (shell_is_interactive)
@@ -276,6 +277,7 @@ int main(unused int argc, unused char *argv[]) {
 
     /* Clean up memory */
     tokens_destroy(tokens);
+    // TODO put back the stdin to the real stdin.
     // Successful destroy
   }
 
