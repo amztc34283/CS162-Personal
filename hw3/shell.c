@@ -28,6 +28,8 @@ struct termios shell_tmodes;
 /* Process group id for the shell */
 pid_t shell_pgid;
 
+// something has gone wrong, local commit is totally different from the repo
+
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_pwd(struct tokens *tokens);
@@ -172,21 +174,16 @@ int main(unused int argc, unused char *argv[]) {
 
       //printf("debug %s", *(command+2));
       //fflush(stdout);
-
-      // Only create pipe when there is redirection
-      int pipefd[2];
-      int pipefds[number_of_pipe+1][2];
-      int pipe_size;
-      if (inward || outward) {
-        pipe(pipefd);
-      } else if (number_of_pipe > 0) {
-        for (int i = 0; i < number_of_pipe; i++) {
-          pipe(pipefds[i]);
-          ++pipe_size;
-        }
-      } 
+      int pipe_size = number_of_pipe;
 
       do {
+        // Only create pipe when there is redirection
+        int pipefd[2];
+        int pipefds[number_of_pipe+1][2];
+
+        if (inward || outward || number_of_pipe > 0) {
+          pipe(pipefd);
+        }
         pid = fork();
         if (pid == -1) {
           printf("Fork fails\n");
@@ -205,15 +202,10 @@ int main(unused int argc, unused char *argv[]) {
           } else if (number_of_pipe > 0) {
             // Even the first child process would not use the read pipe, it should be fine?
             // Could be buggy here.
-            dup2(pipefds[pipe_size-number_of_pipe][0], 0);
-            dup2(pipefds[pipe_size-number_of_pipe+1][1], 1);
-            close(pipefds[pipe_size-number_of_pipe][0]);
-            close(pipefds[pipe_size-number_of_pipe+1][1]);
-          } else if (pipe_size > 0 && number_of_pipe == 0) { //handle number_of_pipe == 0 case, same as stdout
-            close(pipefds[pipe_size-number_of_pipe][1]);
-            dup2(pipefds[pipe_size-number_of_pipe][0], 0);
-            close(pipefds[pipe_size-number_of_pipe][0]);
-          }
+            dup2(pipefd[1], 1);
+            close(pipefd[1]);
+          } 
+          
           // Assuming this is full path if this succeeds.
           execv(*command, command);
   
@@ -262,18 +254,13 @@ int main(unused int argc, unused char *argv[]) {
             }
             close(pipefd[1]);
           } else if (number_of_pipe > 0) {
-            close(pipefds[pipe_size-number_of_pipe][1]);
-            close(pipefds[pipe_size-number_of_pipe][0]);
-            /*while(read(pipefds[pipe_size-number_of_pipe][0], buffer, sizeof(buffer)) != 0) {
-              // therefore I write the output from child to the pipe for the next child to consume
-              write(pipefds[pipe_size-number_of_pipe+1][1], buffer, strlen(buffer));
-            }*/
+            dup2(pipefd[0], 0);
+            close(pipefd[1]); // if this is deleted, it will stuck
             // increment command ptr
-            // TODO
             command = command+pipes_location[0]+1;
           }
           close(fd);
-          waitpid(pid, &status, 0);
+          waitpid(-1, &status, 0);
           if (inward || outward)
             break;
         }
@@ -289,6 +276,7 @@ int main(unused int argc, unused char *argv[]) {
 
     /* Clean up memory */
     tokens_destroy(tokens);
+    // Successful destroy
   }
 
   return 0;
