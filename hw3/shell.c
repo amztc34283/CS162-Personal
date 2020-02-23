@@ -181,7 +181,24 @@ void exec_stdout(char **command, struct tokens *tokens, int pos) {
 // read everything until pipe_location[pos]
 // assuming pipe is null-terminated when passed in.
 // command is incremented everytime.
-void exec_pipe(char **command, struct tokens *tokens, int pos, int number_of_pipe, int *pipe_location) {
+void exec_pipe(struct tokens *tokens, int pos) {
+
+  int initial_pos = pos;
+
+  while(true) {
+    if (tokens_get_length(tokens) == pos || strcmp(tokens_get_token(tokens, pos), "|") == 0)
+      break;
+    pos += 1;
+  }
+
+  char **command = (char **) malloc(sizeof(char *)*(pos-initial_pos+1));
+  for (int i = initial_pos; i <= pos; i++) {
+    if (i == pos)
+      *(command+i-initial_pos) = NULL;
+    else
+      *(command+i-initial_pos) = tokens_get_token(tokens, i);
+  }
+
   pid_t pid;
   int fd[2];
   pipe(fd);
@@ -189,7 +206,7 @@ void exec_pipe(char **command, struct tokens *tokens, int pos, int number_of_pip
   if (pid == -1) {
     printf("fork fails.");
   } else if (pid == 0) {
-    if (pos != number_of_pipe)
+    if (tokens_get_length(tokens) != pos)
       dup2(fd[1], STDOUT_FILENO);
     close(fd[1]);
     close(fd[0]);
@@ -201,11 +218,11 @@ void exec_pipe(char **command, struct tokens *tokens, int pos, int number_of_pip
   close(fd[1]);
   close(fd[0]);
   wait(&pid);
-  if (pos != number_of_pipe) {
-    command = command+pipe_location[pos]+1;
-    exec_pipe(command, tokens, pos+1, number_of_pipe, pipe_location);
-  }
-  // base case - just finished the last command in the pipe chain.
+  for (int j = 0; j < pos-initial_pos+1; j++)
+    free(*(command+j));
+  free(command);
+  if (tokens_get_length(tokens) != pos)
+    exec_pipe(tokens, pos+1);
   exit(0); //TODO
 }
 
@@ -287,15 +304,14 @@ int main(unused int argc, unused char *argv[]) {
           outward = true;
           break;
         } else if (strcmp(*(command+i), "|") == 0) {
+          exec_pipe(tokens, 0);
           // Assumption is that there will not be mixed use of pipe and redirection
-          pipes_location[number_of_pipe] = i;
-          number_of_pipe += 1;
-          *(command+i) = NULL;
+          // pipes_location[number_of_pipe] = i;
+          // number_of_pipe += 1;
+          // *(command+i) = NULL;
         }
       }
       *(command+i) = NULL;
-      if (number_of_pipe > 0)
-        exec_pipe(command, tokens, 0, number_of_pipe, pipes_location);
 
       int j = 0;
       int pipes[2][2];
