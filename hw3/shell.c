@@ -263,9 +263,12 @@ int main(unused int argc, unused char *argv[]) {
             }
             close(pipefd[1]);
           } else if (number_of_pipe > 0) {
-            dup2(pipes[0][0], pipes[1][1]);
-            close(pipes[0][0]);
             close(pipes[0][1]);
+            while(read(pipes[0][0], buffer, sizeof(buffer)) != 0) {
+              write(pipes[1][1], buffer, strlen(buffer));
+            }
+            close(pipes[1][1]);
+            close(pipes[0][0]);
             /*dup2(pipefd[0], 0);
             close(pipefd[0]);
             close(pipefd[1]);*/ // make sure all write is clean; otherwise, it will stuck
