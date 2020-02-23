@@ -267,7 +267,7 @@ int main(unused int argc, unused char *argv[]) {
             while(read(pipes[0][0], buffer, sizeof(buffer)) != 0) {
               write(pipes[1][1], buffer, strlen(buffer));
             }
-            close(pipes[1][1]);
+            //close(pipes[1][1]);
             close(pipes[0][0]);
             /*dup2(pipefd[0], 0);
             close(pipefd[0]);
@@ -275,6 +275,8 @@ int main(unused int argc, unused char *argv[]) {
             // increment command ptr
             command = command+pipes_location[j]+1; // if the index is 1 with wc shell.c | cat; the result will have stdin
             j += 1;
+          } else if (ref > 0 && number_of_pipe == 0) {
+            close(pipes[1][1]);
           }
           close(fd);
           waitpid(-1, &status, 0);
