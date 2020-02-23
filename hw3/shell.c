@@ -90,6 +90,125 @@ int lookup(char cmd[]) {
   return -1;
 }
 
+/* Path Resolution. */
+void exec_full_path(char **command) {
+  // Add path resolution here
+  char *path = getenv("PATH");
+  char *token = strtok(path, ":");
+  char *program = *command;
+  // For slash and null terminator
+  char *slash_program = (char *) malloc(strlen(program)+2);
+  slash_program[0] = '/';
+  slash_program[1] = '\0';
+  strcat(slash_program, program);
+  while(token != NULL) {
+    char *path_resoluted_program = (char *) malloc(strlen(token)+strlen(slash_program)+1);
+    path_resoluted_program[0] = '\0';
+    strcat(path_resoluted_program, token);
+    strcat(path_resoluted_program, slash_program);
+    *command = (char *) malloc(strlen(path_resoluted_program)+1);
+    *command[0] = '\0';
+    strcat(*command, path_resoluted_program);
+    execv(path_resoluted_program, command);
+    token = strtok(NULL, ":");
+  }
+}
+
+/* Handle STDIN. */
+// pos is the index of the file_name.
+// assuming redirection is null-terminated when passed in.
+void exec_stdin(char **command, struct tokens *tokens, int pos) {
+  pid_t pid;
+  int status;
+  int fd[2];
+  pipe(fd);
+  char* file_name = tokens_get_token(tokens, pos);
+  char buffer[1024];
+  pid = fork();
+  if (pid == -1) {
+    printf("fork fails.");
+  } else if (pid == 0) {
+    dup2(fd[0], 0);
+    close(fd[1]);
+    close(fd[0]);
+    execv(*command, command);
+    exec_full_path(command);
+    exit(0);
+  }
+  int ffd = open(file_name, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  while(read(ffd, buffer, sizeof(buffer)) != 0)
+    write(fd[1], buffer, strlen(buffer));
+  close(fd[1]);
+  close(fd[0]);
+  waitpid(-1, &status, 0);
+  close(ffd);
+  exit(0); //TODO
+}
+
+/* Handle STDOUT. */
+// pos is the index of the file name.
+// assuming redirection is null-terminated when passed in.
+void exec_stdout(char **command, struct tokens *tokens, int pos) {
+  pid_t pid;
+  int status;
+  int fd[2];
+  pipe(fd);
+  char* file_name = tokens_get_token(tokens, pos);
+  char buffer[1024];
+  pid = fork();
+  if (pid == -1) {
+    printf("fork fails.");
+  } else if (pid == 0) {
+    dup2(fd[1], 1);
+    close(fd[1]);
+    close(fd[0]);
+    execv(*command, command);
+    exec_full_path(command);
+    exit(0);
+  }
+  int ffd = open(file_name, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  close(fd[1]); // it has to come before the read
+  while(read(fd[0], buffer, sizeof(buffer)) != 0)
+    write(ffd, buffer, strlen(buffer));
+  close(fd[0]);
+  waitpid(-1, &status, 0);
+  close(ffd);
+  exit(0); //TODO
+}
+
+/* Handle PIPE. */
+// pos is the index of the pipe location list.
+// read everything until pipe_location[pos]
+// assuming pipe is null-terminated when passed in.
+// command is incremented everytime.
+void exec_pipe(char **command, struct tokens *tokens, int pos, int number_of_pipe, int *pipe_location) {
+  pid_t pid;
+  int fd[2];
+  pipe(fd);
+  pid = fork();
+  if (pid == -1) {
+    printf("fork fails.");
+  } else if (pid == 0) {
+    if (pos != number_of_pipe)
+      dup2(fd[1], STDOUT_FILENO);
+    close(fd[1]);
+    close(fd[0]);
+    execv(*command, command);
+    exec_full_path(command);
+    exit(0);
+  }
+  dup2(fd[0], STDIN_FILENO);
+  close(fd[1]);
+  close(fd[0]);
+  wait(&pid);
+  if (pos != number_of_pipe) {
+    command = command+pipe_location[pos]+1;
+    exec_pipe(command, tokens, pos+1, number_of_pipe, pipe_location);
+  }
+  // base case - just finished the last command in the pipe chain.
+  exit(0); //TODO
+}
+
 /* Intialization procedures for this shell */
 void init_shell() {
   /* Our shell is connected to standard input. */
@@ -158,9 +277,13 @@ int main(unused int argc, unused char *argv[]) {
       for (i = 0; i < number_of_tokens; i++) {
         *(command+i) = tokens_get_token(tokens, i);
         if (strcmp(*(command+i), "<") == 0 && number_of_pipe == 0) {
+          *(command+i) = NULL;
+          exec_stdin(command, tokens, i+1);
           inward = true;
           break;
         } else if (strcmp(*(command+i), ">") == 0 && number_of_pipe == 0) {
+          *(command+i) = NULL;
+          exec_stdout(command, tokens, i+1);
           outward = true;
           break;
         } else if (strcmp(*(command+i), "|") == 0) {
@@ -171,6 +294,8 @@ int main(unused int argc, unused char *argv[]) {
         }
       }
       *(command+i) = NULL;
+      if (number_of_pipe > 0)
+        exec_pipe(command, tokens, 0, number_of_pipe, pipes_location);
 
       int j = 0;
       int pipes[2][2];
@@ -217,28 +342,8 @@ int main(unused int argc, unused char *argv[]) {
           
           // Assuming this is full path if this succeeds.
           execv(*command, command);
-  
           // Add path resolution here
-          char *path = getenv("PATH");
-          char *token = strtok(path, ":"); 
-          char *program = *command;
-          // For slash and null terminator
-          char *slash_program = (char *) malloc(strlen(program)+2);
-          slash_program[0] = '/';
-          slash_program[1] = '\0';
-          strcat(slash_program, program);
-          while(token != NULL) {
-            char *path_resoluted_program = (char *) malloc(strlen(token)+strlen(slash_program)+1);
-            path_resoluted_program[0] = '\0';
-            strcat(path_resoluted_program, token);
-            strcat(path_resoluted_program, slash_program);
-            *command = (char *) malloc(strlen(path_resoluted_program)+1);
-            *command[0] = '\0';
-            strcat(*command, path_resoluted_program);
-            execv(path_resoluted_program, command);
-            token = strtok(NULL, ":");
-          }
-  
+          exec_full_path(command); 
           exit(0);
         } else { // parent
           // Redirection Fun
