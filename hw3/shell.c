@@ -166,7 +166,7 @@ void exec_stdout(char **command, struct tokens *tokens, int pos) {
     exec_full_path(command);
     exit(0);
   }
-  int ffd = open(file_name, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  int ffd = open(file_name, O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
   close(fd[1]); // it has to come before the read
   while(read(fd[0], buffer, sizeof(buffer)) != 0)
     write(ffd, buffer, strlen(buffer));
