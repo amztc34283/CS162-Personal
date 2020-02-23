@@ -173,14 +173,16 @@ int main(unused int argc, unused char *argv[]) {
       *(command+i) = NULL;
 
       int j = 0;
+      int pipes[2][2];
+      for (int k = 0; k < 2; k++)
+        pipe(pipes[k]);
+      int ref = number_of_pipe;
 
       do {
         // Only create pipe when there is redirection
         int pipefd[2];
-        int tempipe[2];
-        if (inward || outward || number_of_pipe > 0) {
+        if (inward || outward) {
           pipe(pipefd);
-          pipe(tempipe);
         }
         pid = fork();
         if (pid == -1) {
@@ -200,8 +202,17 @@ int main(unused int argc, unused char *argv[]) {
           } else if (number_of_pipe > 0) {
             // Even the first child process would not use the read pipe, it should be fine?
             // Could be buggy here.
-            dup2(pipefd[1], 1);
+            dup2(pipes[0][0], 0);
+            dup2(pipes[0][1], 1);
+            close(pipes[0][1]);
+            close(pipes[0][0]);
+            /*dup2(pipefd[1], 1);
             close(pipefd[1]);
+            close(pipefd[0]);*/
+          } else if (ref > 0 && number_of_pipe == 0) {
+            dup2(pipes[1][0], 0);
+            close(pipes[1][0]);
+            close(pipes[1][1]);
           } 
           
           // Assuming this is full path if this succeeds.
@@ -252,14 +263,19 @@ int main(unused int argc, unused char *argv[]) {
             }
             close(pipefd[1]);
           } else if (number_of_pipe > 0) {
-            dup2(pipefd[0], 0);
-            close(pipefd[1]); // make sure all write is clean; otherwise, it will stuck
+            dup2(pipes[0][0], pipes[1][1]);
+            close(pipes[0][0]);
+            close(pipes[0][1]);
+            /*dup2(pipefd[0], 0);
+            close(pipefd[0]);
+            close(pipefd[1]);*/ // make sure all write is clean; otherwise, it will stuck
             // increment command ptr
             command = command+pipes_location[j]+1; // if the index is 1 with wc shell.c | cat; the result will have stdin
             j += 1;
           }
           close(fd);
           waitpid(-1, &status, 0);
+          
           if (inward || outward)
             break;
         }
@@ -267,6 +283,7 @@ int main(unused int argc, unused char *argv[]) {
         if (number_of_pipe > -1)
           number_of_pipe -= 1;
       } while(number_of_pipe != -1);
+
       //free(command);
       free(pipes_location);
     }
@@ -277,8 +294,6 @@ int main(unused int argc, unused char *argv[]) {
 
     /* Clean up memory */
     tokens_destroy(tokens);
-    // TODO put back the stdin to the real stdin.
-    // Successful destroy
   }
 
   return 0;
