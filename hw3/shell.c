@@ -252,8 +252,19 @@ void init_shell() {
   }
 }
 
+void parent_handler(int sig) {
+
+}
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
+
+  signal(SIGHUP, parent_handler);
+  signal(SIGHUP, parent_handler);
+  signal(SIGHUP, parent_handler);
+  signal(SIGHUP, parent_handler);
+  signal(SIGHUP, parent_handler);
+  signal(SIGHUP, parent_handler);
 
   static char line[4096];
   int line_num = 0;
