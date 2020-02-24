@@ -142,6 +142,7 @@ void exec_stdin(char **command, struct tokens *tokens, int pos) {
   close(fd[0]);
   waitpid(-1, &status, 0);
   close(ffd);
+  exit(0); //TODO
 }
 
 /* Handle STDOUT. */
@@ -172,6 +173,7 @@ void exec_stdout(char **command, struct tokens *tokens, int pos) {
   close(fd[0]);
   waitpid(-1, &status, 0);
   close(ffd);
+  exit(0); //TODO
 }
 
 /* Handle PIPE. */
@@ -221,44 +223,7 @@ void exec_pipe(struct tokens *tokens, int pos) {
   free(command);
   if (tokens_get_length(tokens) != pos)
     exec_pipe(tokens, pos+1);
-}
-
-
-void child_handler(int sig) {
-  kill(getpid(), sig);
-}
-
-void parent_handler(int sig) {
-  // DO NOTHING
-}
-
-void exec_normal(char **command) {
-  // Only create pipe when there is redirection
-  // Time to fork a new process and run a new program provided in the command
-  pid_t pid;
-  int status;
-  pid = fork();
-  if (pid == -1) {
-    printf("Fork fails\n");
-    exit(-1);
-  } else if (pid == 0) { //child
-    //signal(SIGHUP, child_handler);
-    //signal(SIGINT, child_handler);
-    //signal(SIGQUIT, child_handler);
-    //signal(SIGILL, child_handler);
-    //signal(SIGTRAP, child_handler);
-    //signal(SIGABRT, child_handler);
-    // Assuming this is full path if this succeeds.
-    execv(*command, command);
-    // Add path resolution here
-    exec_full_path(command); 
-    exit(0);
-  } else { // parent
-    //setpgid(pid, pid);
-    //tcsetpgrp(0, pid);
-    waitpid(-1, &status, 0);
-    //tcsetpgrp(0, getpid()); 
-  }
+  exit(0); //TODO
 }
 
 /* Intialization procedures for this shell */
@@ -290,13 +255,6 @@ void init_shell() {
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
-  signal(SIGHUP, parent_handler);
-  signal(SIGINT, parent_handler);
-  signal(SIGQUIT, parent_handler);
-  signal(SIGILL, parent_handler);
-  signal(SIGTRAP, parent_handler);
-  signal(SIGABRT, parent_handler);
-
   static char line[4096];
   int line_num = 0;
 
@@ -315,6 +273,13 @@ int main(unused int argc, unused char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
+      // Time to fork a new process and run a new program provided in the command
+      pid_t pid;
+      int status;
+
+      // Add redirection
+      bool inward = false;
+      bool outward = false;
 
       // Add pipe
       int number_of_pipe = 0;       
@@ -324,27 +289,129 @@ int main(unused int argc, unused char *argv[]) {
       // To Be Determined: Do we need to make it smaller if redirection happens?
       char **command = (char **) malloc(sizeof(char*)*number_of_tokens+1);
       // pointer to the pipe location
+      int *pipes_location = (int *) malloc(sizeof(int)*number_of_tokens);
       int i;
       for (i = 0; i < number_of_tokens; i++) {
         *(command+i) = tokens_get_token(tokens, i);
         if (strcmp(*(command+i), "<") == 0 && number_of_pipe == 0) {
           *(command+i) = NULL;
           exec_stdin(command, tokens, i+1);
+          inward = true;
           break;
         } else if (strcmp(*(command+i), ">") == 0 && number_of_pipe == 0) {
           *(command+i) = NULL;
           exec_stdout(command, tokens, i+1);
+          outward = true;
           break;
         } else if (strcmp(*(command+i), "|") == 0) {
-          int origin = dup(STDIN_FILENO);
           exec_pipe(tokens, 0);
-          dup2(origin, STDIN_FILENO);
-          close(origin);
-        } else if (i == number_of_tokens-1) {
-          *(command+i+1) = NULL;
-          exec_normal(command);
+          // Assumption is that there will not be mixed use of pipe and redirection
+          // pipes_location[number_of_pipe] = i;
+          // number_of_pipe += 1;
+          // *(command+i) = NULL;
         }
       }
+      *(command+i) = NULL;
+
+      int j = 0;
+      int pipes[2][2];
+      for (int k = 0; k < 2; k++)
+        pipe(pipes[k]);
+      int ref = number_of_pipe;
+
+      do {
+        // Only create pipe when there is redirection
+        int pipefd[2];
+        if (inward || outward) {
+          pipe(pipefd);
+        }
+        pid = fork();
+        if (pid == -1) {
+          printf("Fork fails\n");
+          exit(-1);
+        } else if (pid == 0) { //child
+          // write side of the pipe is the same as stdout
+          // such that child process writes to stdout is the same as writing to the pipe
+          // Redirection Fun
+          if (outward) {
+            dup2(pipefd[1], 1);
+            close(pipefd[1]);
+          } else if (inward) {
+            close(pipefd[1]);
+            dup2(pipefd[0], 0);
+            close(pipefd[0]);
+          } else if (number_of_pipe > 0) {
+            // Even the first child process would not use the read pipe, it should be fine?
+            // Could be buggy here.
+            dup2(pipes[0][0], 0);
+            dup2(pipes[0][1], 1);
+            close(pipes[0][1]);
+            close(pipes[0][0]);
+            /*dup2(pipefd[1], 1);
+            close(pipefd[1]);
+            close(pipefd[0]);*/
+          } else if (ref > 0 && number_of_pipe == 0) {
+            dup2(pipes[1][0], 0);
+            close(pipes[1][0]);
+            close(pipes[1][1]);
+          } 
+          
+          // Assuming this is full path if this succeeds.
+          execv(*command, command);
+          // Add path resolution here
+          exec_full_path(command); 
+          exit(0);
+        } else { // parent
+          // Redirection Fun
+          char buffer[1024];
+          char *file_name = tokens_get_token(tokens, ++i);
+          int fd;
+          if (outward) {
+            // create file descriptor
+            fd = open(file_name, O_CREAT|O_TRUNC|O_WRONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+            // Has to close parent's own write port so that read would not be blocked
+            close(pipefd[1]);
+            while (read(pipefd[0], buffer, sizeof(buffer)) != 0) {
+              write(fd, buffer, strlen(buffer));
+            }
+            close(pipefd[0]);
+          } else if (inward) {
+            // create file descriptor
+            fd = open(file_name, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+            close(pipefd[0]);
+            while(read(fd, buffer, sizeof(buffer)) != 0) {
+              write(pipefd[1], buffer, strlen(buffer));
+            }
+            close(pipefd[1]);
+          } else if (number_of_pipe > 0) {
+            close(pipes[0][1]);
+            while(read(pipes[0][0], buffer, sizeof(buffer)) != 0) {
+              write(pipes[1][1], buffer, strlen(buffer));
+            }
+            //close(pipes[1][1]);
+            close(pipes[0][0]);
+            /*dup2(pipefd[0], 0);
+            close(pipefd[0]);
+            close(pipefd[1]);*/ // make sure all write is clean; otherwise, it will stuck
+            // increment command ptr
+            command = command+pipes_location[j]+1; // if the index is 1 with wc shell.c | cat; the result will have stdin
+            j += 1;
+          } else if (ref > 0 && number_of_pipe == 0) {
+            close(pipes[1][1]);
+          }
+          close(fd);
+          waitpid(-1, &status, 0);
+          
+          if (inward || outward)
+            break;
+        }
+        // run two times for one pipe, etc.
+        if (number_of_pipe > -1)
+          number_of_pipe -= 1;
+      } while(number_of_pipe != -1);
+
+      //free(command);
+      free(pipes_location);
     }
 
     if (shell_is_interactive)
