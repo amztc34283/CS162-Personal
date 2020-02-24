@@ -260,11 +260,11 @@ int main(unused int argc, unused char *argv[]) {
   init_shell();
 
   signal(SIGHUP, parent_handler);
-  signal(SIGHUP, parent_handler);
-  signal(SIGHUP, parent_handler);
-  signal(SIGHUP, parent_handler);
-  signal(SIGHUP, parent_handler);
-  signal(SIGHUP, parent_handler);
+  signal(SIGQUIT, parent_handler);
+  signal(SIGILL, parent_handler);
+  signal(SIGTRAP, parent_handler);
+  signal(SIGINT, parent_handler);
+  signal(SIGABRT, parent_handler);
 
   static char line[4096];
   int line_num = 0;
