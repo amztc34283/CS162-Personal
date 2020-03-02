@@ -41,10 +41,13 @@ void serve_file(int fd, char *path) {
   int temp = 0;
   char buffer[1024];
 
+  int pfd[2];
+  pipe(pfd);
+
   int ffd = open(path, O_RDONLY);
   while((temp = read(ffd, buffer, 1024)) != 0) {
     length += temp;
-    write(fd, buffer, temp);
+    write(pfd[1], buffer, temp);
   }
   close(ffd);
 
@@ -55,6 +58,15 @@ void serve_file(int fd, char *path) {
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
   http_send_header(fd, "Content-Length", buf); // Change this too
   http_end_headers(fd);
+
+  close(pfd[1]);
+
+  while((temp = read(pfd[0], buffer, 1024)) != 0) {
+    write(fd, buffer, temp);
+  }
+
+  close(pfd[0]);
+
 
   /* TODO: PART 2 */
 }
