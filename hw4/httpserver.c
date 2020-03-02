@@ -39,13 +39,13 @@ void serve_file(int fd, char *path) {
 
   int length = 0;
   int temp = 0;
-  char buffer[1024];
+  char buffer[4096];
 
   int pfd[2];
   pipe(pfd);
 
   int ffd = open(path, O_RDONLY);
-  while((temp = read(ffd, buffer, 1024)) != 0) {
+  while((temp = read(ffd, buffer, 4096)) != 0) {
     length += temp;
     write(pfd[1], buffer, temp);
   }
@@ -61,7 +61,7 @@ void serve_file(int fd, char *path) {
 
   close(pfd[1]);
 
-  while((temp = read(pfd[0], buffer, 1024)) != 0) {
+  while((temp = read(pfd[0], buffer, 4096)) != 0) {
     write(fd, buffer, temp);
   }
 
