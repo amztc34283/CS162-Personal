@@ -67,7 +67,6 @@ void serve_file(int fd, char *path) {
 
   close(pfd[0]);
 
-
   /* TODO: PART 2 */
 }
 
@@ -77,6 +76,20 @@ void serve_directory(int fd, char *path) {
   http_end_headers(fd);
 
   /* TODO: PART 3 */
+  DIR *dirp;
+  struct dirent *dp;
+  if ((dirp = opendir(path)) == NULL) {
+    perror("Could not open directory.");
+    exit(errno);
+  }
+  char buffer[128];
+  do {
+    errno = 0;
+    if ((dp = readdir(dirp)) != NULL) {
+      http_format_href(buffer, path, dp->d_name);
+      write(fd, buffer, strlen(buffer)+1);
+    }
+  } while (dp != NULL);
 
 }
 
