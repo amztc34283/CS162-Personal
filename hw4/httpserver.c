@@ -170,6 +170,41 @@ void handle_files_request(int fd) {
   return;
 }
 
+struct arg_struct {
+    int client_fd;
+    int upstream_fd;
+};
+
+void *serve_client(void *arguments) {
+  struct arg_struct *args = arguments;
+  char buffer[4096];
+  int temp = 0;
+  while(1) {
+    while((temp = read(args->client_fd, buffer, 4096)) != 0) {
+      if(send(args->upstream_fd, buffer, temp, MSG_NOSIGNAL) == -1) {
+        close(args->client_fd);
+        close(args->upstream_fd);
+        return NULL;
+      }
+    }
+  }
+}
+
+void *serve_upstream(void *arguments) {
+  struct arg_struct *args = arguments;
+  char buffer[4096];
+  int temp = 0;
+  while(1) {
+    while((temp = read(args->upstream_fd, buffer, 4096) != 0)) {
+      if(send(args->client_fd, buffer, temp, MSG_NOSIGNAL) == -1) {
+        close(args->client_fd);
+        close(args->upstream_fd);
+        return NULL;
+      }
+    }
+  }
+}
+
 /*
  * Opens a connection to the proxy target (hostname=server_proxy_hostname and
  * port=server_proxy_port) and relays traffic to/from the stream fd and the
@@ -233,7 +268,16 @@ void handle_proxy_request(int fd) {
   }
 
   /* TODO: PART 4 */
+  pthread_t serve_client_thread;
+  pthread_t serve_upstream_thread;
+  struct arg_struct args;
+  args.client_fd = fd;
+  args.upstream_fd = target_fd;
 
+  pthread_create(&serve_client_thread, NULL, serve_client, (void *)&args);
+  pthread_create(&serve_upstream_thread, NULL, serve_upstream, (void *)&args);
+  pthread_join(serve_client_thread, NULL);
+  pthread_join(serve_upstream_thread, NULL);
 }
 
 #ifdef POOLSERVER
