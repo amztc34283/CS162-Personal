@@ -117,12 +117,29 @@ void handle_files_request(int fd) {
    * determine when to call serve_file() or serve_directory() depending
    * on `path`. Make your edits below here in this function.
    */
-  if (open(path, O_RDONLY) == -1) {
+  char buffer[256];
+
+  struct stat statbuf;
+  stat(path, &statbuf);
+  if (S_ISDIR(statbuf.st_mode)) {
+    http_format_index(buffer, path);
+    if (open(buffer, O_RDONLY) == -1) {
+      serve_directory(fd, path);
+    } else {
+      serve_file(fd, buffer);
+    }
+  } else if (S_ISREG(statbuf.st_mode)) {
+    if (open(path, O_RDONLY) == -1) {
+      http_start_response(fd, 404);
+      close(fd);
+      return;
+    }
+    serve_file(fd, path);
+  } else {
     http_start_response(fd, 404);
     close(fd);
     return;
   }
-  serve_file(fd, path);
 
   close(fd);
   return;
