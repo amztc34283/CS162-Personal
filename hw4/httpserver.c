@@ -181,13 +181,15 @@ void *serve_client(void *arguments) {
   int temp = 0;
   while(1) {
     while((temp = read(args->client_fd, buffer, 4096)) != 0) {
-      if(send(args->upstream_fd, buffer, temp, MSG_NOSIGNAL) == -1) {
+      if (temp == -1) {
         close(args->client_fd);
         close(args->upstream_fd);
         return NULL;
       }
+      write(args->upstream_fd, buffer, temp);
     }
   }
+  return NULL;
 }
 
 void *serve_upstream(void *arguments) {
@@ -195,14 +197,16 @@ void *serve_upstream(void *arguments) {
   char buffer[4096];
   int temp = 0;
   while(1) {
-    while((temp = read(args->upstream_fd, buffer, 4096) != 0)) {
-      if(send(args->client_fd, buffer, temp, MSG_NOSIGNAL) == -1) {
+    while((temp = read(args->upstream_fd, buffer, 4096)) != 0) {
+      if (temp == -1) {
         close(args->client_fd);
         close(args->upstream_fd);
         return NULL;
       }
+      write(args->client_fd, buffer, temp);
     }
   }
+  return NULL;
 }
 
 /*
