@@ -404,6 +404,13 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
      * process should continue listening and accepting
      * connections.
      */
+    pid_t pid;
+    pid = fork();
+    if (pid == 0) { // Child
+      request_handler(client_socket_number);
+      exit(0);
+    }
+    close(client_socket_number);
 
     /* PART 5 END */
 #elif THREADSERVER
