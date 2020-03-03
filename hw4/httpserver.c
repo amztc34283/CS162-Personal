@@ -290,10 +290,6 @@ void *handle_clients(void *void_request_handler) {
 
   /* TODO: PART 7 */
   request_handler(wq_pop(&work_queue));
-  pthread_mutex_lock(&work_queue.mutex);
-  pthread_cond_signal(&work_queue.condvar);
-  work_queue.running_threads -= 1;
-  pthread_mutex_unlock(&work_queue.mutex);
 }
 
 /* 
@@ -442,12 +438,7 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
      * in the thread pool will send a response to the client.
      */
 
-    pthread_mutex_lock(&work_queue.mutex);
-    while(work_queue.running_threads == num_threads)
-      pthread_cond_wait(&work_queue.condvar, &work_queue.mutex);
-    work_queue.running_threads += 1;
     wq_push(&work_queue, client_socket_number);
-    pthread_mutex_unlock(&work_queue.mutex);
 
     /* PART 7 END */
 #endif
