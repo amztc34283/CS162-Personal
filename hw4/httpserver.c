@@ -290,6 +290,13 @@ void *handle_clients(void *void_request_handler) {
 
   /* TODO: PART 7 */
   request_handler(wq_pop(&work_queue));
+
+  pthread_t thread;
+  int rc = pthread_create(&thread, NULL, handle_clients, (void *) request_handler);
+  if (rc) {
+    printf("ERROR; return code from pthread_create() is %d\n", rc);
+    exit(-1);
+  } 
 }
 
 /* 
