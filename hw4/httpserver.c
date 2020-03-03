@@ -37,35 +37,26 @@ int server_proxy_port;
  */
 void serve_file(int fd, char *path) {
 
-  int length = 0;
   int temp = 0;
   char buffer[4096];
 
-  int pfd[2];
-  pipe(pfd);
-
   int ffd = open(path, O_RDONLY);
-  while((temp = read(ffd, buffer, 4096)) != 0) {
-    length += temp;
-    write(pfd[1], buffer, temp);
-  }
-  close(ffd);
+  struct stat statbuf;
+  stat(path, &statbuf);
 
   char buf[100];
-  snprintf(buf, 100, "%d", length);
+  snprintf(buf, 100, "%d", (int) statbuf.st_size);
 
   http_start_response(fd, 200);
   http_send_header(fd, "Content-Type", http_get_mime_type(path));
   http_send_header(fd, "Content-Length", buf); // Change this too
   http_end_headers(fd);
 
-  close(pfd[1]);
-
-  while((temp = read(pfd[0], buffer, 4096)) != 0) {
+  while((temp = read(ffd, buffer, 4096)) != 0) {
     write(fd, buffer, temp);
   }
-
-  close(pfd[0]);
+  close(ffd);
+  close(fd);
 
   /* TODO: PART 2 */
 }
