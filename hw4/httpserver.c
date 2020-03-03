@@ -443,7 +443,7 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
      */
 
     pthread_mutex_lock(&work_queue.mutex);
-    while(work_queue.running_threads < num_threads)
+    while(work_queue.running_threads == num_threads)
       pthread_cond_wait(&work_queue.condvar, &work_queue.mutex);
     work_queue.running_threads += 1;
     wq_push(&work_queue, client_socket_number);
