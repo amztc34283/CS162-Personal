@@ -81,7 +81,7 @@ void serve_directory(int fd, char *path) {
       write(fd, buffer, strlen(buffer)+1);
     }
   } while (dp != NULL);
-
+  close(fd);
 }
 
 
@@ -157,7 +157,6 @@ void handle_files_request(int fd) {
     return;
   }
 
-  close(fd);
   return;
 }
 
@@ -418,7 +417,6 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
       request_handler(client_socket_number);
       exit(0);
     }
-    close(client_socket_number);
 
     /* PART 5 END */
 #elif THREADSERVER
@@ -434,7 +432,6 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
 
     pthread_t serve_client_thread;
     pthread_create(&serve_client_thread, NULL, request_handler, (void *) client_socket_number);
-    close(client_socket_number);
 
     /* PART 6 END */
 #elif POOLSERVER
@@ -447,7 +444,6 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
      */
 
     wq_push(&work_queue, client_socket_number);
-    close(client_socket_number);
 
     /* PART 7 END */
 #endif
