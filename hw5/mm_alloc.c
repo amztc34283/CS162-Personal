@@ -158,9 +158,9 @@ void mm_free(void* ptr)
 {
   //TODO: Implement free
   // Go back to the metadata header
-  /*if (ptr == NULL)
+  if (ptr == NULL)
     return;
   metadata_t *free_ptr = ptr-sizeof(metadata_t);
   free_ptr->free = true;
-  coalesce(free_ptr);*/
+  coalesce(free_ptr);
 }
