@@ -116,13 +116,6 @@ void* mm_malloc(size_t size)
   return NULL;
 }
 
-void* mm_realloc(void* ptr, size_t size)
-{
-  //TODO: Implement realloc
-
-  return NULL;
-}
-
 void coalesce(metadata_t *ptr)
 {
   if (ptr == NULL)
@@ -164,4 +157,24 @@ void mm_free(void* ptr)
   metadata_t *free_ptr = ptr-sizeof(metadata_t);
   free_ptr->free = true;
   coalesce(free_ptr);
+}
+
+void* mm_realloc(void* ptr, size_t size)
+{
+  //TODO: Implement realloc
+  if (ptr != NULL && size == 0) {
+    mm_free(ptr);
+    return NULL;
+  } else if (ptr == NULL) {
+    return mm_malloc(size);
+  }
+  metadata_t *realloc_ptr = ptr-sizeof(metadata_t);
+  size_t contents_size = realloc_ptr->size;
+  char *contents = realloc_ptr->contents;
+  mm_free(ptr);
+  void* new_ptr = mm_malloc(size);
+  if (new_ptr == NULL)
+    return NULL;
+  size_t final_size = size > contents_size ? contents_size: size;
+  return memcpy(new_ptr, contents, final_size);
 }
