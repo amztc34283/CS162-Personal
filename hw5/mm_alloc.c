@@ -39,7 +39,7 @@ void zero_fill(char *content, size_t size)
 
 void* split_large_block(metadata_t *begin, size_t size)
 {
-  metadata_t *sub_block = begin->contents[size];
+  metadata_t *sub_block = begin->contents+size;
   sub_block->size = begin->size-size-sizeof(metadata_t);
   sub_block->free = true;
   sub_block->prev = begin;
