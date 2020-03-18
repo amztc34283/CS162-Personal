@@ -10,8 +10,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-metadata_t *head;
-metadata_t *tail;
+static metadata_t *head;
+static metadata_t *tail;
 
 // This is for use after each call of sbrk
 void new_mapped_region(metadata_t* begin, size_t size, metadata_t *prev)
@@ -54,11 +54,12 @@ void* split_large_block(metadata_t *begin, size_t size)
 // Find the first fit
 metadata_t *find_first_fit(size_t size)
 {
-  while(head != NULL) {
-    if (head->free && head->size >= size) {
-      return head;
+  metadata_t *ptr = head;
+  while(ptr != NULL) {
+    if (ptr->free && ptr->size >= size) {
+      return ptr;
     }
-    head = head->next;
+    ptr = ptr->next;
   }
   return NULL;
 }
