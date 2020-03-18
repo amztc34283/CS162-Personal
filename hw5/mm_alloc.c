@@ -111,9 +111,19 @@ void* mm_realloc(void* ptr, size_t size)
   return NULL;
 }
 
+void coalesce(metadata_t *ptr)
+{
+
+}
+
 void mm_free(void* ptr)
 {
   //TODO: Implement free
-
-  return NULL;
+  // Go back to the metadata header
+  if (ptr == NULL)
+    return;
+  ptr = ptr-sizeof(metadata_t);
+  metadata_t *free_ptr = ptr;
+  free_ptr->free = true;
+  //TODO coalesce and zero-fill in malloc
 }
