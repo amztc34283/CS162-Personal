@@ -30,6 +30,13 @@ void* get_content_addr(metadata_t *block)
   return block->contents;
 }
 
+void zero_fill(char *content, size_t size)
+{
+  for (int i = 0; i < size; i++) {
+    *(content+i) = 0;
+  }
+}
+
 void* split_large_block(metadata_t *begin, size_t size)
 {
   metadata_t *sub_block = begin->contents[size+sizeof(metadata_t)];
@@ -40,6 +47,7 @@ void* split_large_block(metadata_t *begin, size_t size)
   begin->size = size;
   begin->free = false;
   begin->next = sub_block;
+  zero_fill(begin->contents, begin->size);
   return get_content_addr(begin);
 }
 
@@ -75,6 +83,7 @@ void* mm_malloc(size_t size)
     new_mapped_region(begin, size, head);
     head = begin;
     tail = begin;
+    zero_fill(begin->contents, begin->size);
     return get_content_addr(begin);
   } else { // it is not the first time to map memory.
     // search existing metadata_t for spot
@@ -89,6 +98,7 @@ void* mm_malloc(size_t size)
       }
       new_mapped_region(begin, size, tail);
       tail = begin;
+      zero_fill(begin->contents, begin->size);
       return get_content_addr(begin);
     }
           
@@ -98,6 +108,7 @@ void* mm_malloc(size_t size)
     } else if (first_fit->size >= size) {  // if first_fit is barely big enough
       first_fit->size = size;
       first_fit->free = false;
+      zero_fill(first_fit->contents, first_fit->size);
       return first_fit->contents;
     }
   }
