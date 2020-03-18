@@ -142,7 +142,6 @@ void coalesce(metadata_t *ptr)
 
   // handle the case of no adjacent free block
   if (head == ptr && tail == ptr)
-    ptr->free = true;
     return;
 
   size_t new_size = 0;
@@ -162,5 +161,6 @@ void mm_free(void* ptr)
   if (ptr == NULL)
     return;
   metadata_t *free_ptr = ptr-sizeof(metadata_t);
+  free_ptr->free = true;
   coalesce(free_ptr);
 }
