@@ -146,7 +146,7 @@ void coalesce(metadata_t *ptr)
 
   size_t new_size = 0;
   while(head != tail) {
-    new_size += head->size;
+    new_size += head->size + sizeof(metadata_t);
     head = head->next;
   }
   new_size += tail->size;
