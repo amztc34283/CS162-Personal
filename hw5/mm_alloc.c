@@ -106,10 +106,10 @@ void* mm_malloc(size_t size)
     if (first_fit->size >= size+sizeof(metadata_t)) {
       return split_large_block(first_fit, size);
     } else if (first_fit->size >= size) {  // if first_fit is barely big enough
-      first_fit->size = size;
+      // first_fit->size = size; we may not need to set size
       first_fit->free = false;
       zero_fill(first_fit->contents, first_fit->size);
-      return first_fit->contents;
+      return get_content_addr(first_fit);
     }
   }
   return NULL;
@@ -124,7 +124,35 @@ void* mm_realloc(void* ptr, size_t size)
 
 void coalesce(metadata_t *ptr)
 {
+  if (ptr == NULL)
+    return;
 
+  metadata_t *head = ptr;
+  metadata_t *tail = ptr;
+
+  while(head->prev != NULL && head->prev->free) {
+    head = head->prev;
+  }
+
+  while(tail->next != NULL && tail->next->free) {
+    tail = tail->next;
+  }
+
+  metadata_t *res = head;
+
+  // handle the case of no adjacent free block
+  if (head == ptr && tail == ptr)
+    ptr->free = true;
+    return;
+
+  size_t new_size = 0;
+  while(head != tail) {
+    new_size += head->size;
+    head = head->next;
+  }
+  new_size += tail->size;
+  res->size = new_size;
+  res->next = tail->next;
 }
 
 void mm_free(void* ptr)
@@ -134,6 +162,5 @@ void mm_free(void* ptr)
   if (ptr == NULL)
     return;
   metadata_t *free_ptr = ptr-sizeof(metadata_t);
-  free_ptr->free = true;
-  //TODO coalesce
+  coalesce(free_ptr);
 }
