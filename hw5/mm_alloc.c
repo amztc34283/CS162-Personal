@@ -39,7 +39,7 @@ void zero_fill(char *content, size_t size)
 
 void* split_large_block(metadata_t *begin, size_t size)
 {
-  metadata_t *sub_block = begin->contents[size+sizeof(metadata_t)];
+  metadata_t *sub_block = begin->contents[size];
   sub_block->size = begin->size-size-sizeof(metadata_t);
   sub_block->free = true;
   sub_block->prev = begin;
@@ -133,8 +133,7 @@ void mm_free(void* ptr)
   // Go back to the metadata header
   if (ptr == NULL)
     return;
-  ptr = ptr-sizeof(metadata_t);
-  metadata_t *free_ptr = ptr;
+  metadata_t *free_ptr = ptr-sizeof(metadata_t);
   free_ptr->free = true;
-  //TODO coalesce and zero-fill in malloc
+  //TODO coalesce
 }
