@@ -33,12 +33,30 @@ typedef struct NO_ALIGN page_table_entry {
 
 /* See Table 4-10: "Format of a PAE Page-Table Entry that Maps a 4-KByte Page" of the Intel IA32 manual Vol 3a */
 typedef struct NO_ALIGN page_directory_entry {
-
+  bool present : 1;
+  bool writeable : 1;
+  bool supervisor : 1;
+  bool pwt : 1; // Page-level write-through
+  bool pcd : 1; // Page-level cache disable
+  bool accessed : 1;
+  bool ignored_a : 1;
+  bool pg_size : 1; // Page attribute table enable
+  int ignored_b : 4; // These bits are ignored by the processor
+  uint64_t pfn : 40;
+  int zero : 11; // These bits are reserved
+  bool nxe : 1; // IA32 Extended Feature Enable Register No-Execute Enable (IA32_EFER.NXE)
 } pmd_t;
 
 /* See Table 4-8: "Format of a PAE Page-Directory-Pointer-Table Entry (PDPTE)" of the Intel IA32 manual Vol 3a */
 typedef struct NO_ALIGN page_directory_pointer_table_entry {
-
+  bool present : 1;
+  int zero_a : 2;
+  bool pwt : 1; // Page-level write-through
+  bool pcd : 1; // Page-level cache disable
+  int zero_b : 4; // These bits are ignored by the processor
+  int ignored : 3;
+  uint64_t pfn : 40;
+  int zero_c : 11; // These bits are reserved
 } pgd_t;
 
 #ifndef PG_SIZE

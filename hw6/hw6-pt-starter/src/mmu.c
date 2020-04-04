@@ -27,10 +27,71 @@
  * If a page fault occurs, return a non-zero value, otherwise return 0 on a successful translation.
  * */
 
-int virt_to_phys(vaddr_ptr vaddr, paddr_ptr cr3, paddr_ptr *paddr) {
-  /* TODO */
+#define PFN_MASK 0x000ffffffffff000
+#define PRESENT_MASK 0x0000000000000001
+#define PDE_MASK 0x3fe00000
+#define PTE_MASK 0x001ff000
+#define OFFSET_MASK 0x00000fff
 
-  return 1;
+// Define PDPTE, PDE, PTE as all 8 bytes type
+typedef struct PDPTE { char x[8]; } PDPTE;
+typedef struct PDE { char x[8]; } PDE;
+typedef struct PTE { char x[8]; } PTE;
+
+int virt_to_phys(vaddr_ptr vaddr, paddr_ptr cr3, paddr_ptr *paddr) {
+
+  // possible bug on arithmetic shift
+  uint32_t pdpte_idx = vaddr >> 30;
+  uint32_t pde_idx = (vaddr & PDE_MASK) >> 21;
+  uint32_t pte_idx = (vaddr & PTE_MASK) >> 12;
+
+  uint32_t offset = (vaddr & OFFSET_MASK);
+
+  // sizeof might have bugs
+  PDPTE* lv1_table = (PDPTE *) malloc(4 * sizeof(PDPTE));
+  PDE* lv2_table = (PDE *) malloc(512 * sizeof(PDE));
+  PTE* lv3_table = (PTE *) malloc(512 * sizeof(PTE));
+  // char* page_table = (char *) malloc(4096);
+
+  // fetch page things from cr3
+  ram_fetch(cr3, lv1_table, 4 * sizeof(PDPTE)); 
+  // 1. No page fault, returns 0
+  // Page fault only happens when the present bit is not set.
+  PDPTE pdpte_val = lv1_table[pdpte_idx];
+  uint64_t* pdpte_uint_val = (uint64_t *) malloc(8);
+  memcpy(pdpte_uint_val, pdpte_val.x, 8);
+  if ((*pdpte_uint_val & PRESENT_MASK) == 0)
+    return 1;
+
+  // look okay so far.
+  // translate the page dir/num to a physical address
+  // 64 bits = 12 free bits + 40 bits from page + 12 bits from offset in a page
+  *pdpte_uint_val = *pdpte_uint_val & PFN_MASK;  
+  ram_fetch((paddr_ptr) *pdpte_uint_val, lv2_table, 512 * sizeof(PDE));
+  PDE pde_val = lv2_table[pde_idx];
+  uint64_t* pde_uint_val = (uint64_t *) malloc(8);
+  memcpy(pde_uint_val, pde_val.x, 8);
+  if ((*pde_uint_val & PRESENT_MASK) == 0)
+    return 1;
+
+  // looks good?
+  *pde_uint_val = *pde_uint_val & PFN_MASK;
+  ram_fetch((paddr_ptr) *pde_uint_val, lv3_table, 512 * sizeof(PTE));
+  PTE pte_val = lv3_table[pte_idx];
+  uint64_t* pte_uint_val = (uint64_t *) malloc(8);
+  memcpy(pte_uint_val, pte_val.x, 8);
+  if ((*pte_uint_val & PRESENT_MASK) == 0)
+    return 1;
+
+  // looks good
+  // use offset to traverse the final table
+  // last bit of offset is never used in 64 bits address
+  //TODO
+  *pte_uint_val = *pte_uint_val & PFN_MASK;
+  //ram_fetch((paddr_ptr) *pte_uint_val, page_table, 4096);
+  //*paddr = page_table[offset];
+  *paddr = *pte_uint_val | offset;
+  return 0;
 }
 
 char *str_from_virt(vaddr_ptr vaddr, paddr_ptr cr3) {
@@ -39,7 +100,8 @@ char *str_from_virt(vaddr_ptr vaddr, paddr_ptr cr3) {
   char c = ' ';
   paddr_ptr paddr;
 
-  for (int i; c; i++) {
+  // WTF: the i is not zero
+  for (int i = 0; c; i++) {
     if(virt_to_phys(vaddr + i, cr3, &paddr)){
       printf("Page fault occured at address %p\n", (void *) vaddr + i);
       return (void *) 0;

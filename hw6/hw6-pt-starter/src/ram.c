@@ -7,13 +7,19 @@
 #include <stdint.h>
 #include <string.h>
 
+// zero bit indexed
+// with 36th bit set - 64GB of RAM
 #define RAM_SIZE (1ull << 36)
 
+// with 22nd bit set - 4MB sized chunk
 #define CHUNK_SIZE (1ull << 22)
+// with 14th bit set - 16384 chunks
 #define MAX_CHUNKS (1ull << 14)
 
+// chunk is equal to 1 byte * CHUNK_SIZE = 4MB datatype
 typedef uint8_t chunk[CHUNK_SIZE];
 
+// lookup table of the 16384 chunks
 int32_t chunk_table[MAX_CHUNKS];
 chunk *chunks;
 size_t num_chunks;
