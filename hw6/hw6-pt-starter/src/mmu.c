@@ -39,6 +39,7 @@ typedef struct PDE { char x[8]; } PDE;
 typedef struct PTE { char x[8]; } PTE;
 
 int virt_to_phys(vaddr_ptr vaddr, paddr_ptr cr3, paddr_ptr *paddr) {
+  // Naive Implementation.
 
   // possible bug on arithmetic shift
   uint32_t pdpte_idx = vaddr >> 30;
