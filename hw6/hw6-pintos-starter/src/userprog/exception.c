@@ -115,7 +115,7 @@ kill (struct intr_frame *f)
 bool is_stack_access(void *vddr, uint32_t esp)
 {
   // assuming all vddr above esp is stack access
-  return (uint32_t) vddr > (uint32_t) pg_round_down((void *) esp);
+  return (uint32_t) vddr >= (uint32_t) pg_round_down((void *) esp) - 32;
 }
 
 /* Page fault handler.  This is a skeleton that must be filled in
@@ -184,7 +184,8 @@ page_fault (struct intr_frame *f)
       syscall_exit(-1);
     // TODO: fault_addr is 4 or 32 bytes below the stack ptr
     // allocate page until the fault addr is covered.
-    while (esp < PHYS_BASE - (stack_page_fault_cnt + 1) * PGSIZE) {
+    bool pusha = fault_addr < esp;
+    while (esp < PHYS_BASE - (stack_page_fault_cnt + 1) * PGSIZE || pusha) {
       uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
       if (p == NULL) // No Free Page available
         syscall_exit(-1);
@@ -194,6 +195,8 @@ page_fault (struct intr_frame *f)
       uint32_t addr = PHYS_BASE - (stack_page_fault_cnt + 1) * PGSIZE;
       if(!pagedir_set_page(t->pagedir, addr, p, write)) // memory for page table can not be obtained.
         syscall_exit(-1);
+      if (pusha)
+        pusha = !pusha;
     }
   }
 
