@@ -7,6 +7,7 @@
 #include "threads/vaddr.h"
 #include "filesys/filesys.h"
 #include "filesys/file.h"
+#include "threads/palloc.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -98,6 +99,43 @@ syscall_close (int fd)
     }
 }
 
+static uint32_t
+syscall_sbrk (intptr_t increment)
+{
+  struct thread* t = thread_current();
+  intptr_t sbrk = t->sbrk;
+  uint32_t heap_base = t->heap_base;
+
+  // TODO handle weird corner case that the address is already page aligned
+  if (increment > 0) {
+    uint32_t desire = heap_base + sbrk + increment;
+    // sbrk is not mallocable.
+    /*while (desire > pg_round_down(heap_base + sbrk + PGSIZE)) {
+      uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
+      if (p == NULL)
+        system_exit(-1);
+      bool page_aligned = pg_round_up(heap_base + sbrk) == heap_base + sbrk;
+      if(!pagedir_set_page(t->pagedir, pg_round_up(heap_base + sbrk), p, write))
+        system_exit(-1);
+      // Handle corner case that the page aligned sbrk has to update sbrk at least one more page.
+      sbrk = page_aligned ? sbrk + PGSIZE : pg_round_up(heap_base + sbrk) - heap_base;
+    }
+    sbrk = desire - heap_base;*/
+    uint32_t num_pg_alloc = ((int) pg_round_up(desire) - (int) sbrk - heap_base) / PGSIZE;
+    for (int i = 0; i < num_pg_alloc; i++) {
+      uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
+      if (p == NULL)
+        return -1;
+      if(!pagedir_set_page(t->pagedir, heap_base + sbrk + PGSIZE * i, p, true))
+        return -1; 
+    }
+    t->sbrk = desire;
+  }
+
+  // intptr_t is signed integer
+  return heap_base + sbrk;
+}
+
 static void
 syscall_handler (struct intr_frame *f)
 {
@@ -134,6 +172,10 @@ syscall_handler (struct intr_frame *f)
     case SYS_CLOSE:
       validate_buffer_in_user_region (&args[1], sizeof(uint32_t));
       syscall_close ((int) args[1]);
+      break;
+
+    case SYS_SBRK:
+      f->eax = (uint32_t) syscall_sbrk((intptr_t) args[1]);
       break;
 
     default:

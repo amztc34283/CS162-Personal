@@ -281,6 +281,9 @@ load (const char *file_name, void (**eip) (void), void **esp)
               uint32_t mem_page = phdr.p_vaddr & ~PGMASK;
               uint32_t page_offset = phdr.p_vaddr & PGMASK;
               uint32_t read_bytes, zero_bytes;
+              // Add PGSIZE for the case that the address is already page aligned.
+              t->heap_base = pg_round_up(phdr.p_vaddr + phdr.p_memsz) + PGSIZE;
+              t->sbrk = 0;
               if (phdr.p_filesz > 0)
                 {
                   /* Normal segment.
