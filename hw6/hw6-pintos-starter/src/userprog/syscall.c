@@ -8,6 +8,8 @@
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/palloc.h"
+//#include "userprog/pagedir.c"
+#include "userprog/pagedir.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -111,24 +113,29 @@ syscall_sbrk (intptr_t increment)
     uint32_t desire = heap_base + sbrk + increment;
     uint32_t num_pg_alloc = ((int) pg_round_up(desire) - (int) sbrk - heap_base) / PGSIZE;
     for (int i = 0; i < num_pg_alloc; i++) {
+      // p is the kernel virtual address
       uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
       if (p == NULL) {
         t->sbrk = sbrk;
         // UNDO all palloc page
-        //while(i != 0) {
-        //  pagedir_clear_page(t->pagedir, heap_base + sbrk + PGSIZE * i);
-        //  palloc_free_page();
-        //  i--;
-        //}
+        while(i != 0) {
+          uint32_t *p_remove = pagedir_get_page(t->pagedir, pg_round_up(heap_base + sbrk) + PGSIZE * (i - 1));
+          pagedir_clear_page(t->pagedir, pg_round_up(heap_base + sbrk) + PGSIZE * (i - 1));
+          palloc_free_page(p_remove);
+          i--;
+        }
         return -1;
       }
       // Corner Case: when sbrk is zero, that page also has to be allocated.
       if(!pagedir_set_page(t->pagedir, pg_round_up(heap_base + sbrk) + PGSIZE * i, p, true)) {
         t->sbrk = sbrk;
+        // TODO: might need to something similar above
         return -1;
       }
     }
     t->sbrk = desire - heap_base;
+  } else if (increment < 0) {
+
   }
 
   // intptr_t is signed integer
