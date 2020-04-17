@@ -189,10 +189,11 @@ page_fault (struct intr_frame *f)
       if (p == NULL) // No Free Page available
         syscall_exit(-1);
       // Get an address such that it belongs to the closest page
-      uint32_t addr = (uint32_t) pg_round_down(fault_addr);
+      // uint32_t addr = (uint32_t) pg_round_down(fault_addr);
+      stack_page_fault_cnt++;
+      uint32_t addr = PHYS_BASE - (stack_page_fault_cnt + 1) * PGSIZE;
       if(!pagedir_set_page(t->pagedir, addr, p, write)) // memory for page table can not be obtained.
         syscall_exit(-1);
-      stack_page_fault_cnt++;
     }
   }
 
