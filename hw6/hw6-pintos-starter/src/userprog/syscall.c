@@ -109,25 +109,24 @@ syscall_sbrk (intptr_t increment)
   // TODO handle weird corner case that the address is already page aligned
   if (increment > 0) {
     uint32_t desire = heap_base + sbrk + increment;
-    // sbrk is not mallocable.
-    /*while (desire > pg_round_down(heap_base + sbrk + PGSIZE)) {
-      uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
-      if (p == NULL)
-        system_exit(-1);
-      bool page_aligned = pg_round_up(heap_base + sbrk) == heap_base + sbrk;
-      if(!pagedir_set_page(t->pagedir, pg_round_up(heap_base + sbrk), p, write))
-        system_exit(-1);
-      // Handle corner case that the page aligned sbrk has to update sbrk at least one more page.
-      sbrk = page_aligned ? sbrk + PGSIZE : pg_round_up(heap_base + sbrk) - heap_base;
-    }
-    sbrk = desire - heap_base;*/
     uint32_t num_pg_alloc = ((int) pg_round_up(desire) - (int) sbrk - heap_base) / PGSIZE;
     for (int i = 0; i < num_pg_alloc; i++) {
       uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
-      if (p == NULL)
+      if (p == NULL) {
+        t->sbrk = sbrk;
+        // UNDO all palloc page
+        //while(i != 0) {
+        //  pagedir_clear_page(t->pagedir, heap_base + sbrk + PGSIZE * i);
+        //  palloc_free_page();
+        //  i--;
+        //}
         return -1;
-      if(!pagedir_set_page(t->pagedir, heap_base + sbrk + PGSIZE * i, p, true))
-        return -1; 
+      }
+      // Corner Case: when sbrk is zero, that page also has to be allocated.
+      if(!pagedir_set_page(t->pagedir, pg_round_up(heap_base + sbrk) + PGSIZE * i, p, true)) {
+        t->sbrk = sbrk;
+        return -1;
+      }
     }
     t->sbrk = desire - heap_base;
   }
