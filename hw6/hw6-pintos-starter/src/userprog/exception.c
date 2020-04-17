@@ -6,9 +6,11 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "userprog/syscall.h"
+#include "threads/palloc.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
+static long long stack_page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
@@ -110,6 +112,12 @@ kill (struct intr_frame *f)
     }
 }
 
+bool is_stack_access(void *vddr, uint32_t esp)
+{
+  // assuming all vddr above esp is stack access
+  return (uint32_t) vddr > (uint32_t) pg_round_down((void *) esp);
+}
+
 /* Page fault handler.  This is a skeleton that must be filled in
    to implement virtual memory.  Some solutions to project 2 may
    also require modifying this code.
@@ -170,16 +178,31 @@ page_fault (struct intr_frame *f)
    * assume this; depending on the nature of the fault, the stack may need to
    * be grown.
    */
-  if (user)
-    syscall_exit (-1);
+  uint32_t esp = f->esp;
+  if (user) {
+    if (!is_user_vaddr (fault_addr) || !is_stack_access(fault_addr, esp))
+      syscall_exit(-1);
+    // TODO: fault_addr is 4 or 32 bytes below the stack ptr
+    // allocate page until the fault addr is covered.
+    while (esp < PHYS_BASE - (stack_page_fault_cnt + 1) * PGSIZE) {
+      uint32_t *p = palloc_get_page(PAL_ZERO | PAL_USER);
+      if (p == NULL) // No Free Page available
+        syscall_exit(-1);
+      // Get an address such that it belongs to the closest page
+      uint32_t addr = (uint32_t) pg_round_down(fault_addr);
+      if(!pagedir_set_page(t->pagedir, addr, p, write)) // memory for page table can not be obtained.
+        syscall_exit(-1);
+      stack_page_fault_cnt++;
+    }
+  }
 
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
-  printf ("Page fault at %p: %s error %s page in %s context.\n",
-          fault_addr,
-          not_present ? "not present" : "rights violation",
-          write ? "writing" : "reading",
-          user ? "user" : "kernel");
-  kill (f);
+  //printf ("Page fault at %p: %s error %s page in %s context.\n",
+  //        fault_addr,
+  //        not_present ? "not present" : "rights violation",
+  //        write ? "writing" : "reading",
+  //        user ? "user" : "kernel");
+  //kill (f);
 }
