@@ -129,7 +129,7 @@ syscall_sbrk (intptr_t increment)
       if(!pagedir_set_page(t->pagedir, heap_base + sbrk + PGSIZE * i, p, true))
         return -1; 
     }
-    t->sbrk = desire;
+    t->sbrk = desire - heap_base;
   }
 
   // intptr_t is signed integer
