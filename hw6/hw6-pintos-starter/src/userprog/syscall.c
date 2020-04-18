@@ -135,7 +135,16 @@ syscall_sbrk (intptr_t increment)
     }
     t->sbrk = desire - heap_base;
   } else if (increment < 0) {
-
+    uint32_t desire = heap_base + sbrk + increment;
+    uint32_t num_pg_alloc = ((int) pg_round_up(sbrk + heap_base) - (int) desire) / PGSIZE;
+    for (int i = 0; i < num_pg_alloc; i++) {
+      // p is the kernel virtual address
+      // UNDO all palloc page
+      uint32_t *p_remove = pagedir_get_page(t->pagedir, pg_round_up(heap_base + sbrk) - PGSIZE * (i + 1));
+      pagedir_clear_page(t->pagedir, pg_round_up(heap_base + sbrk) - PGSIZE * (i + 1));
+      palloc_free_page(p_remove);
+    }
+    t->sbrk = desire - heap_base;
   }
 
   // intptr_t is signed integer
