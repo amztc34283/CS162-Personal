@@ -1,13 +1,10 @@
-#include "../string.h"
-#include "../stdio.h"
-#include "stdlib.h"
-#include "syscall.h"
+#include <stdlib.h>
 
 static metadata_t *head;
 static metadata_t *tail;
 
 // This is for use after each call of sbrk
-void new_mapped_region(metadata_t* begin, size_t size, metadata_t *prev)
+static void new_mapped_region(metadata_t* begin, size_t size, metadata_t *prev)
 {
   begin->size = size;
   begin->free = false;
@@ -18,19 +15,19 @@ void new_mapped_region(metadata_t* begin, size_t size, metadata_t *prev)
     prev->next = begin;
 }
 
-void* get_content_addr(metadata_t *block)
+static void* get_content_addr(metadata_t *block)
 {
   return block->contents;
 }
 
-void zero_fill(char *content, size_t size)
+static void zero_fill(char *content, size_t size)
 {
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     *(content+i) = 0;
   }
 }
 
-void* split_large_block(metadata_t *begin, size_t size)
+static void* split_large_block(metadata_t *begin, size_t size)
 {
   metadata_t *sub_block = begin->contents+size;
   sub_block->size = begin->size-size-sizeof(metadata_t);
@@ -45,7 +42,7 @@ void* split_large_block(metadata_t *begin, size_t size)
 }
 
 // Find the first fit
-metadata_t *find_first_fit(size_t size)
+static metadata_t *find_first_fit(size_t size)
 {
   metadata_t *ptr = head;
   while(ptr != NULL) {
@@ -57,7 +54,7 @@ metadata_t *find_first_fit(size_t size)
   return NULL;
 }
 
-void coalesce(metadata_t *ptr)
+static void coalesce(metadata_t *ptr)
 {
   if (ptr == NULL)
     return;
@@ -90,7 +87,7 @@ void coalesce(metadata_t *ptr)
 }
 
 void*
-malloc (size_t size)
+malloc (int size)
 {
   /* Homework 5, Part B: YOUR CODE HERE */
   //TODO: Implement malloc
@@ -104,7 +101,7 @@ malloc (size_t size)
   if (head == NULL) {
     metadata_t *begin;
     // extend break by the requested size and the size of the metadata
-    if((void *) (begin = sbrk(size + sizeof(metadata_t))) == (void *) -1) {
+    if((void *) (begin = (metadata_t *) sbrk(size + sizeof(metadata_t))) == (void *) -1) {
       return NULL;
     }
     new_mapped_region(begin, size, head);
@@ -119,7 +116,7 @@ malloc (size_t size)
     if (first_fit == NULL) {
       metadata_t *begin;
       // extend break by the requested size and the size of the metadata
-      if((void *) (begin = sbrk(size + sizeof(metadata_t))) == (void *) -1) {
+      if((void *) (begin = (metadata_t *)sbrk(size + sizeof(metadata_t))) == (void *) -1) {
         return NULL;
       }
       new_mapped_region(begin, size, tail);
@@ -158,13 +155,8 @@ void* calloc (size_t nmemb, size_t size)
   if (nmemb == 0 || size == 0)
     return NULL;
   /* Homework 5, Part B: YOUR CODE HERE */
-  void **array = (void **) malloc(nmemb * sizeof(void *));
-  for (int i = 0; i < nmemb; i++) {
-    *(array+i) = (void *) malloc(size);
-    memset(*(array+i), 0, size);
-  }
+  int **array = (int **) malloc(nmemb * sizeof(void *));
   return array;
-  // fix warning
 }
 
 void* realloc (void* ptr, size_t size)
